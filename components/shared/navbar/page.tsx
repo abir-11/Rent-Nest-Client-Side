@@ -17,7 +17,7 @@ import {
 import { logoutAction } from "@/app/(auth)/_actions/loginAction";
 
 const navItems = [
-  { label: "Find Rooms", href: "/rooms", icon: Search },
+  { label: "Find Property", href: "/properties", icon: Search },
   { label: "Categories", href: "/categories", icon: Map },
   { label: "About Us", href: "/about", icon: Home },
 ];
@@ -83,7 +83,7 @@ const handleAction = async (action: string) => {
                 {pathname === item.href && (
                   <motion.div
                     layoutId="navbar-indicator"
-                    className="absolute -bottom-7 left-0 right-0 h-[2px] bg-emerald-500"
+                    className="absolute -bottom-4 left-0 right-0 h-[2px] bg-emerald-500"
                   />
                 )}
               </Link>

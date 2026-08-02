@@ -15,6 +15,7 @@ const PublicLayout = async (
     return (
         <div>
             <Navbar user={user}></Navbar>
+            
             {children}
         </div>
     )

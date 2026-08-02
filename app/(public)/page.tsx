@@ -4,6 +4,7 @@ import { getMe } from './../../service/getMe';
 import { HeroSection } from "./HeroSection/page";
 const HeroSectionAny = HeroSection as any;
 import { getAllCategotyWithOutLogin } from './../../service/getAllCategotyWithOutLogin';
+import AvailableRoomsSection from "@/components/AvailableRoomsSection/page";
 
 export default async function Home() {
 
@@ -13,7 +14,7 @@ export default async function Home() {
   return (
      <div>
     <HeroSectionAny categories={categories}></HeroSectionAny>
-    
+    <AvailableRoomsSection />
      </div>
   );
 }
