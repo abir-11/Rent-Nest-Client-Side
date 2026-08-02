@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   Search, MapPin, BedDouble, Wifi, Car, ShieldCheck,
-  ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown, Loader2
+  ChevronLeft, ChevronRight, SlidersHorizontal, ArrowUpDown
 } from "lucide-react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import { getAllProperties } from "@/service/getAllProperties";
 import Image from "next/image";
 import { PropertyCardSkeleton } from "../_components/PropertyCardSkeleton";
 import Link from "next/link";
+import { AdvancedFilterSidebar, FilterState } from "@/components/AdvancedFilterSidebar/page";
 
 type Category = { id: string; name: string };
 type Landlord = { id: string; name: string; email: string };
@@ -55,6 +56,9 @@ export default function PropertiesPage() {
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, limit: 10, totalProterties: 0, totalPage: 1 });
 
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState<FilterState | null>(null);
+
   // Fetch Data Form Server Action
   const fetchProperties = async () => {
     setLoading(true);
@@ -65,6 +69,11 @@ export default function PropertiesPage() {
         searchTerm: searchTerm || undefined,
         sortBy: sortBy.includes("price") ? "price" : "createdAt",
         sortOrder: sortBy === "price_asc" ? "asc" : "desc",
+        location: advancedFilters?.location || undefined,
+        minPrice: advancedFilters?.minPrice || undefined,
+        maxPrice: advancedFilters?.maxPrice || undefined,
+        category: advancedFilters?.category !== "All" ? advancedFilters?.category : undefined,
+        amenities: advancedFilters?.amenities.length ? advancedFilters.amenities.join(",") : undefined,
       });
 
       if (response?.success) {
@@ -80,15 +89,13 @@ export default function PropertiesPage() {
     }
   };
 
-  // Trigger Fetch when Filters or Pagination change
   useEffect(() => {
-    // Debounce effect for search term so it doesn't call API on every keystroke
     const delayDebounceFn = setTimeout(() => {
       fetchProperties();
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, sortBy, page]);
+  }, [searchTerm, sortBy, page, advancedFilters]);
 
   // Handle Search Input Change (Reset to page 1)
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,15 +103,18 @@ export default function PropertiesPage() {
     setPage(1);
   };
 
-  const [imageSrc, setImageSrc] = useState(
-    properties?.[0]?.images?.[0] &&
-      properties[0].images[0].startsWith("http")
-      ? properties[0].images[0]
-      : "https://placehold.co/800x600/png?text=No+Image"
-  );
-
   return (
-    <div className="min-h-screen bg-[#03150D] text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-900 text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+      
+      <AdvancedFilterSidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+        onApplyFilters={(filters) => {
+          setAdvancedFilters(filters);
+          setPage(1); 
+        }}
+      />
+
       <div className="max-w-7xl mx-auto space-y-8">
 
         {/* Header & Controls */}
@@ -117,7 +127,7 @@ export default function PropertiesPage() {
               placeholder="Search by title or location..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full pl-10 bg-[#03150D]/50 border-white/10 focus-visible:ring-emerald-500 text-white placeholder-gray-400 rounded-xl h-12"
+              className="w-full pl-10 bg-gray-900/50 border-white/10 focus-visible:ring-emerald-500 text-white placeholder-gray-400 rounded-xl h-12"
             />
           </div>
 
@@ -128,9 +138,9 @@ export default function PropertiesPage() {
                 value={sortBy}
                 onChange={(e) => {
                   setSortBy(e.target.value);
-                  setPage(1); // সর্ট চেঞ্জ হলে পেজ ১ এ ফিরে যাবে
+                  setPage(1); 
                 }}
-                className="w-full pl-9 pr-4 h-12 bg-[#03150D]/50 border border-white/10 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer"
+                className="w-full pl-9 pr-4 h-12 bg-gray-900 border border-white/10 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer"
               >
                 <option value="createdAt">Newest First</option>
                 <option value="price_asc">Price: Low to High</option>
@@ -138,17 +148,26 @@ export default function PropertiesPage() {
               </select>
             </div>
 
-            <Button variant="outline" className="h-12 border-white/10 bg-white/5 hover:bg-emerald-900/40 hover:text-emerald-400 text-gray-300 rounded-xl">
+            {/*  Filter Button Updated */}
+            <Button 
+              onClick={() => setIsSidebarOpen(true)}
+              variant="outline" 
+              className="relative h-12 border-white/10 bg-white/5 hover:bg-emerald-900/40 hover:text-emerald-400 text-gray-300 rounded-xl"
+            >
               <SlidersHorizontal className="h-4 w-4 md:mr-2" />
               <span className="hidden md:inline">Filters</span>
+              
+              {/* Active Filter Indicator Dot */}
+              {advancedFilters && (advancedFilters.location || advancedFilters.amenities.length > 0 || advancedFilters.minPrice) && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-gray-900"></span>
+              )}
             </Button>
           </div>
         </div>
 
-    {/* Skeleton Loading State */}
+        {/* Skeleton Loading State */}
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* আমরা এখানে ডামি ৬টি কার্ড রেন্ডার করছি, যেহেতু পেজে লিমিট ৯ বা ৬ দেওয়া থাকে */}
             {[1, 2, 3, 4, 5, 6].map((index) => (
               <PropertyCardSkeleton key={index} />
             ))}
@@ -175,24 +194,27 @@ export default function PropertiesPage() {
             <AnimatePresence>
               {properties.map((property) => (
                 <motion.div key={property.id} variants={cardVariants} layout>
-                  <Card className="group relative bg-[#0B1C14] border-white/10 overflow-hidden rounded-xl hover:border-emerald-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col h-full">
+                  <Card className="group relative bg-gray-800 border-white/10 overflow-hidden rounded-xl hover:border-emerald-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col h-full">
 
                     {/* Image Section */}
                     <div className="relative h-56 w-full overflow-hidden rounded-t-xl bg-gray-900">
-
+                      
+                      {/*  Image Fallback Bug Fixed */}
                       <Image
-                        src={imageSrc}
+                        src={
+                          property.images?.[0] && property.images[0].startsWith("http")
+                            ? property.images[0]
+                            : "https://placehold.co/800x600/png?text=No+Image"
+                        }
                         alt={property.title}
                         fill
                         className="object-cover transition-transform duration-500 group-hover:scale-110"
                         sizes="(max-width:768px) 100vw, (max-width:1200px) 50vw, 33vw"
-                        onError={() => {
-                          setImageSrc(
-                            "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80"
-                          );
+                        onError={(e) => {
+                          e.currentTarget.srcset = "";
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80";
                         }}
                       />
-
 
                       {/* Status Badge */}
                       <Badge
@@ -260,11 +282,11 @@ export default function PropertiesPage() {
                           {property.landlord?.name || "Unknown"}
                         </span>
                       </div>
-<Button asChild className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-md transition-all">
-  <Link href={`/properties/${property.id}`}>
-    View Details
-  </Link>
-</Button>
+                      <Button asChild className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-md transition-all">
+                        <Link href={`/properties/${property.id}`}>
+                          View Details
+                        </Link>
+                      </Button>
                     </CardFooter>
                   </Card>
                 </motion.div>

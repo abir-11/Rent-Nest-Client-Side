@@ -1,7 +1,7 @@
 
  export const PropertyCardSkeleton = () => {
   return (
-    <div className="bg-[#0B1C14] border border-white/5 rounded-xl overflow-hidden flex flex-col h-full">
+    <div className="bg-gray-900 border border-white/5 rounded-xl overflow-hidden flex flex-col h-full">
       {/* Image Skeleton */}
       <div className="h-56 w-full bg-white/5 animate-pulse rounded-t-xl relative">
         {/* Badge Skeletons */}

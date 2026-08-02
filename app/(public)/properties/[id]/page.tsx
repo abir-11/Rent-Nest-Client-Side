@@ -32,7 +32,7 @@ type Property = {
 
 const PropertyDetailsSkeleton = () => {
   return (
-    <div className="min-h-screen bg-[#03150D] text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-900 text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header Skeleton */}
@@ -61,14 +61,14 @@ const PropertyDetailsSkeleton = () => {
                 <div key={i} className="h-24 w-32 bg-white/5 rounded-xl animate-pulse" />
               ))}
             </div>
-            <div className="h-48 w-full bg-[#0B1C14] border border-white/5 rounded-xl animate-pulse" />
-            <div className="h-64 w-full bg-[#0B1C14] border border-white/5 rounded-xl animate-pulse" />
+            <div className="h-48 w-full bg-gray-900 border border-white/5 rounded-xl animate-pulse" />
+            <div className="h-64 w-full bg-gray-900 border border-white/5 rounded-xl animate-pulse" />
           </div>
 
           {/* Right Column Skeleton (Sticky) */}
           <div className="lg:col-span-1 space-y-6">
-            <div className="h-64 w-full bg-[#0B1C14] border border-white/5 rounded-xl animate-pulse" />
-            <div className="h-48 w-full bg-[#0B1C14] border border-white/5 rounded-xl animate-pulse" />
+            <div className="h-64 w-full bg-gray-900 border border-white/5 rounded-xl animate-pulse" />
+            <div className="h-48 w-full bg-gray-900 border border-white/5 rounded-xl animate-pulse" />
           </div>
         </div>
       </div>
@@ -91,11 +91,9 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
       try {
         const response = await getSingleProperty(resolvedParams.id);
         
-        // আপনার JSON রেসপন্স অনুযায়ী response.data.result চেক করছি
         if (response?.success && response?.data?.result) {
           setProperty(response.data.result);
           
-          // ইমেজ থাকলে প্রথমটা অ্যাক্টিভ করবে, না থাকলে ফলব্যাক ইমেজ
           const images = response.data.result.images;
           setActiveImage(images && images.length > 0 ? images[0] : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80");
         } else {
@@ -123,15 +121,13 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
     }, 1500);
   };
 
-  // ১. ডেটা লোড হওয়ার সময় স্কেলিটন দেখাবে
   if (loading) {
     return <PropertyDetailsSkeleton />;
   }
 
-  // ২. প্রপার্টি না পাওয়া গেলে এই পেজ দেখাবে
   if (!property) {
     return (
-      <div className="min-h-screen bg-[#03150D] flex flex-col items-center justify-center text-white">
+      <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center text-white">
         <div className="text-6xl mb-4">🏚️</div>
         <h2 className="text-3xl font-bold mb-4">Property Not Found</h2>
         <p className="text-gray-400 mb-6">The property you are looking for does not exist or has been removed.</p>
@@ -142,9 +138,8 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
     );
   }
 
-  // ৩. সফলভাবে ডেটা লোড হলে মেইন লেআউট দেখাবে
   return (
-    <div className="min-h-screen bg-[#03150D] text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-900 text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Navigation & Header */}
@@ -223,7 +218,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             </div>
 
             {/* Description Section */}
-            <Card className="bg-[#0B1C14] border-white/10">
+            <Card className="bg-gray-700 border-white/10">
               <CardHeader>
                 <h3 className="text-2xl font-bold text-white flex items-center gap-2">
                   <Home className="h-6 w-6 text-emerald-500" />
@@ -238,7 +233,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             </Card>
 
             {/* Amenities Section */}
-            <Card className="bg-[#0B1C14] border-white/10">
+            <Card className="bg-gray-700 border-white/10">
               <CardHeader>
                 <h3 className="text-2xl font-bold text-white">Amenities</h3>
               </CardHeader>
@@ -269,7 +264,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             className="lg:col-span-1 space-y-6 lg:sticky lg:top-28"
           >
             {/* Request to Rent Card */}
-            <Card className="bg-[#0B1C14] border-white/10 shadow-[0_0_40px_rgba(16,185,129,0.05)] overflow-hidden">
+            <Card className="bg-gray-700 border-white/10 shadow-[0_0_40px_rgba(16,185,129,0.05)] overflow-hidden">
               <div className="h-2 bg-emerald-500 w-full" />
               <CardContent className="p-6">
                 <div className="text-3xl font-extrabold text-white mb-2">
@@ -285,7 +280,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                   className={`w-full h-14 text-lg font-bold rounded-xl shadow-lg transition-all ${
                     property.isAvailable 
                     ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/50 hover:shadow-emerald-500/30 hover:-translate-y-1" 
-                    : "bg-gray-800 text-gray-500 cursor-not-allowed"
+                    : "bg-gray-800 text-white cursor-not-allowed"
                   }`}
                 >
                   {isRequesting ? (
@@ -306,7 +301,7 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
 
             {/* Landlord Profile Card */}
             {property.landlord && (
-              <Card className="bg-[#0B1C14] border-white/10">
+              <Card className="bg-gray-700 border-white/10">
                 <CardHeader>
                   <h3 className="text-lg font-bold text-white">Property Manager</h3>
                 </CardHeader>
