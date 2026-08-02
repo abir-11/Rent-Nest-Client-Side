@@ -8,7 +8,7 @@ import { getAllCategotyWithOutLogin } from './../../service/getAllCategotyWithOu
 export default async function Home() {
 
   const user=await getMe();
-  console.log(user);
+  //console.log(user);
   const categories = await getAllCategotyWithOutLogin()
   return (
      <div>

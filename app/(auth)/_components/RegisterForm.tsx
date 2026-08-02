@@ -28,7 +28,7 @@ export default function RegisterForm() {
     try {
       const { confirmPassword, ...payload } = data;
       
-      console.log("Form Payload to send: ", payload);
+      //console.log("Form Payload to send: ", payload);
 
       const response = await registerAction(payload);
 

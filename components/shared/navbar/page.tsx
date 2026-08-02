@@ -30,7 +30,7 @@ const userMenuItems = [
 export function Navbar({ user }: any) {
   const router = useRouter();
   const pathname = usePathname();
-  console.log("Navbar user:", user); // Debugging line to check the user object
+  //console.log("Navbar user:", user); // Debugging line to check the user object
 
 const isLoggedIn = user?.success && !!user?.data?.user;
 

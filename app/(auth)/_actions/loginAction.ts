@@ -56,19 +56,17 @@ export async function loginAction(
     cookieStore.set("accessToken", data.data.accessToken, {
       httpOnly: true,
       sameSite: "lax",
-      path: "/",
       maxAge: 60 * 60 * 24,
     });
 
     cookieStore.set("refreshToken", data.data.refreshToken || data.data.refresToken, {
       httpOnly: true,
       sameSite: "lax",
-      path: "/",
       maxAge: 60 * 60 * 24 * 7,
     });
 
     const role = data.data?.JwtPayload?.role;
-    console.log("Role:", role);
+    //console.log("Role:", role);
 
     let redirectUrl = "/";
     if (role === "ADMIN") {

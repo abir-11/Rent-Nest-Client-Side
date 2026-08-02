@@ -7,7 +7,6 @@ export const getMe = async () => {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get("accessToken")?.value;
 
-    // Token না থাকলে
     if (!accessToken) {
       return {
         success: false,
@@ -30,7 +29,7 @@ export const getMe = async () => {
 
     const result = await res.json();
 
-    console.log("ME API Response:", result);
+    //console.log("ME API Response:", result);
 
     if (!res.ok) {
       return {
