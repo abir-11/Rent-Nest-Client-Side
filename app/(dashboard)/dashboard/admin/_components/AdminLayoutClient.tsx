@@ -15,6 +15,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
     { id: "users", label: "Manage Users", icon: Users, href: "/dashboard/admin/users" },
     { id: "properties", label: "All Properties", icon: Building2, href: "/dashboard/admin/properties" },
     { id: "rentals", label: "Rental Requests", icon: FileText, href: "/dashboard/admin/rentals" },
+    { id: "profile", label: "Admin Profile", icon: FileText, href: "/dashboard/admin/profile" },
   ];
 
   return (

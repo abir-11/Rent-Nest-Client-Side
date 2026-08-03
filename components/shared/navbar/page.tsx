@@ -5,13 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
   LogOut,
-  Settings,
+ 
   User,
   Search,
   Map,
   Menu,
   X,
 } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -32,11 +33,18 @@ const navItems = [
   { label: "Categories", href: "/categories", icon: Map },
   { label: "About Us", href: "/about", icon: Home },
 ];
-
-const userMenuItems = [
-  { label: "My Profile", icon: User, action: "/profile" },
-  { label: "Settings", icon: Settings, action: "/settings" },
-];
+const getDashboardPath = (role?: string) => {
+  switch (role) {
+    case "ADMIN":
+      return "/dashboard/admin";
+    case "LANDLORD":
+      return "/dashboard/landlord";
+    case "TENANT":
+      return "/dashboard/tenant";
+    default:
+      return "/dashboard"; 
+  }
+};
 
 export function Navbar({ user }: any) {
   const router = useRouter();
@@ -48,6 +56,19 @@ export function Navbar({ user }: any) {
 
   const userName = user?.data?.user?.name || "User Name";
   const userEmail = user?.data?.user?.email || "user@email.com";
+  const userMenuItems = [
+  { 
+    label: "My Profile", 
+    icon: User, 
+    action: `/dashboard/${getDashboardPath(user?.role)}/profile` // বা /profile
+  },
+  { 
+    label: "Dashboard", 
+    icon: LayoutDashboard, 
+    action: `/dashboard/${getDashboardPath(user?.role)}`
+  },
+];
+
 
   const handleAction = async (action: string) => {
     if (action === "logout") {
@@ -243,8 +264,8 @@ export function Navbar({ user }: any) {
                       }}
                       className="flex w-full items-center gap-3 px-5 py-4 text-white hover:bg-emerald-900/40"
                     >
-                      <Settings className="h-5 w-5" />
-                      Settings
+                      <LayoutDashboard className="h-5 w-5" />
+                      Dashboard
                     </button>
 
                     <button
