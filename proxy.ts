@@ -105,12 +105,12 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (
-    pathname.startsWith("/dashboard/admin") &&
-    userRole !== "ADMIN"
-  ) {
-    return NextResponse.redirect(new URL("/not-found", request.url));
-  }
+  // if (
+  //   pathname.startsWith("/dashboard/admin") &&
+  //   userRole !== "ADMIN"
+  // ) {
+  //   return NextResponse.redirect(new URL("/not-found", request.url));
+  // }
 
   if (
     pathname.startsWith("/dashboard/landlord") &&
