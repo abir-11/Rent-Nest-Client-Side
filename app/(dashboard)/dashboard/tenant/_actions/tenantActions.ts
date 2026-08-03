@@ -2,9 +2,8 @@
 
 import { cookies } from "next/headers";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://rent-nest-mu.vercel.app";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://rent-nest-mu.vercel.app/";
 
-// ১. Rental/Request History আনুন (GET /api/rentals)
 export async function getTenantRentals() {
   try {
     const cookieStore = await cookies();
@@ -20,7 +19,15 @@ export async function getTenantRentals() {
     });
 
     if (!res.ok) throw new Error("Failed to fetch rentals");
-    return await res.json();
+
+    // ১. রেসপন্স একবারই পার্স করে ভেরিয়েবলে রাখুন
+    const data = await res.json();
+
+    // ২. এবার নিরাপদে কনসোল লগ করুন
+    console.log("Fetched Rentals Data:", data);
+
+    // ৩. পার্স করা ডেটা রিটার্ন করুন
+    return data;
   } catch (error: any) {
     console.error("Rentals fetch error:", error);
     return { success: false, data: [] };
@@ -49,7 +56,6 @@ export async function postTenantRentals() {
   }
 }
 
-// ২. Payment Initiate করুন (POST /api/payments/create)
 export async function createPayment(rentalId: string) {
   try {
     const cookieStore = await cookies();

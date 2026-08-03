@@ -6,19 +6,22 @@ import { Building2, CheckCircle2, Clock, DollarSign, CreditCard } from "lucide-r
 import Link from "next/link";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
-export default function TenantOverviewClient({ rentals }: { rentals: any[] }) {
-  // Stats calculation
-  const totalRequests = rentals.length;
-  const completedStays = rentals.filter(r => r.status === "COMPLETED" || r.status === "APPROVED").length;
-  const pendingRequests = rentals.filter(r => r.status === "PENDING").length;
-  
-  const totalSpent = rentals
-    .filter(r => r.paymentStatus === "PAID")
-    .reduce((acc, r) => acc + (r.amount || r.rentAmount || 0), 0);
+export default function TenantOverviewClient({ rentals = [] }: { rentals: any[] }) {
+  // Safe Array ensure করা
+  const safeRentals = Array.isArray(rentals) ? rentals : [];
 
-  const chartData = rentals.map((r, i) => ({
+  // Stats calculation
+  const totalRequests = safeRentals.length;
+  const completedStays = safeRentals.filter(r => r.status === "COMPLETED" || r.status === "ACTIVE").length;
+  const pendingRequests = safeRentals.filter(r => r.status === "PENDING").length;
+  
+  const totalSpent = safeRentals
+    .filter(r => r.paymentStatus === "PAID")
+    .reduce((acc, r) => acc + (r.amount || r.rentAmount || r.property?.price || 0), 0);
+
+  const chartData = safeRentals.map((r, i) => ({
     name: r.property?.title?.slice(0, 10) || `Stay #${i + 1}`,
-    Amount: r.amount || r.rentAmount || 0,
+    Amount: r.amount || r.rentAmount || r.property?.price || 0,
   }));
 
   return (
@@ -84,36 +87,44 @@ export default function TenantOverviewClient({ rentals }: { rentals: any[] }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {rentals.slice(0, 5).map((rental) => (
-                <tr key={rental.id || rental._id} className="hover:bg-gray-50/50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{rental.property?.title || "Apartment/Hotel"}</td>
-                  <td className="px-6 py-4 font-semibold text-emerald-600">৳{rental.amount || rental.rentAmount || 0}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      rental.status === "APPROVED" || rental.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
-                      rental.status === "REJECTED" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
-                    }`}>
-                      {rental.status || "PENDING"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                      rental.paymentStatus === "PAID" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"
-                    }`}>
-                      {rental.paymentStatus || "UNPAID"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    {rental.status === "APPROVED" && rental.paymentStatus !== "PAID" ? (
-                      <Link href={`/dashboard/tenant/requests/${rental.id || rental._id}/pay`} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1">
-                        <CreditCard className="w-3.5 h-3.5" /> Pay
-                      </Link>
-                    ) : (
-                      <span className="text-gray-400 text-xs">N/A</span>
-                    )}
+              {safeRentals.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-400">
+                    No rental requests found.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                safeRentals.slice(0, 5).map((rental) => (
+                  <tr key={rental.id || rental._id} className="hover:bg-gray-50/50">
+                    <td className="px-6 py-4 font-medium text-gray-900">{rental.property?.title || "Apartment/Hotel"}</td>
+                    <td className="px-6 py-4 font-semibold text-emerald-600">৳{rental.amount || rental.rentAmount || rental.property?.price || 0}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        rental.status === "APPROVED" || rental.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
+                        rental.status === "REJECTED" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {rental.status || "PENDING"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        rental.paymentStatus === "PAID" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"
+                      }`}>
+                        {rental.paymentStatus || "UNPAID"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {rental.status === "APPROVED" && rental.paymentStatus !== "PAID" ? (
+                        <Link href={`/dashboard/tenant/requests/${rental.id || rental._id}/pay`} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1">
+                          <CreditCard className="w-3.5 h-3.5" /> Pay
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400 text-xs">N/A</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
