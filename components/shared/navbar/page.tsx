@@ -5,14 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Home,
   LogOut,
- 
   User,
   Search,
   Map,
   Menu,
   X,
+  LayoutDashboard,
 } from "lucide-react";
-import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -33,8 +32,10 @@ const navItems = [
   { label: "Categories", href: "/categories", icon: Map },
   { label: "About Us", href: "/about", icon: Home },
 ];
+
+// রোল অনুযায়ী ড্যাশবোর্ড পাথ রিটার্ন করার ফাংশন
 const getDashboardPath = (role?: string) => {
-  switch (role) {
+  switch (role?.toUpperCase()) {
     case "ADMIN":
       return "/dashboard/admin";
     case "LANDLORD":
@@ -42,7 +43,7 @@ const getDashboardPath = (role?: string) => {
     case "TENANT":
       return "/dashboard/tenant";
     default:
-      return "/dashboard"; 
+      return "/dashboard";
   }
 };
 
@@ -52,23 +53,31 @@ export function Navbar({ user }: any) {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // ইউজারের তথ্য সঠিকভাবে বের করা
   const isLoggedIn = user?.success && !!user?.data?.user;
+  const currentUser = user?.data?.user;
 
-  const userName = user?.data?.user?.name || "User Name";
-  const userEmail = user?.data?.user?.email || "user@email.com";
+  const userName = currentUser?.name || "User Name";
+  const userEmail = currentUser?.email || "user@email.com";
+  const userRole = currentUser?.role || user?.role;
+  const userPhoto = currentUser?.profilePhoto || currentUser?.image || currentUser?.avatar;
+
+  // ড্যাশবোর্ডের বেজ পাথ
+  const dashboardBasePath = getDashboardPath(userRole);
+
+  // ডায়নামিক ড্রপডাউন ও মোবাইল মেনু আইটেম
   const userMenuItems = [
-  { 
-    label: "My Profile", 
-    icon: User, 
-    action: `/dashboard/${getDashboardPath(user?.role)}/profile` // বা /profile
-  },
-  { 
-    label: "Dashboard", 
-    icon: LayoutDashboard, 
-    action: `/dashboard/${getDashboardPath(user?.role)}`
-  },
-];
-
+    {
+      label: "My Profile",
+      icon: User,
+      action: `${dashboardBasePath}/profile`,
+    },
+    {
+      label: "Dashboard",
+      icon: LayoutDashboard,
+      action: dashboardBasePath,
+    },
+  ];
 
   const handleAction = async (action: string) => {
     if (action === "logout") {
@@ -79,7 +88,6 @@ export function Navbar({ user }: any) {
         router.push("/login");
         router.refresh();
       }
-
       return;
     }
 
@@ -141,8 +149,17 @@ export function Navbar({ user }: any) {
                       whileHover={{ scale: 1.05 }}
                       className="cursor-pointer"
                     >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-500/50 bg-black/40">
-                        <User className="h-5 w-5 text-emerald-400" />
+                      {/* ইউজার প্রোফাইল পিকচার অথবা আইকন */}
+                      <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-emerald-500/50 bg-black/40">
+                        {userPhoto ? (
+                          <img
+                            src={userPhoto}
+                            alt={userName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-emerald-400" />
+                        )}
                       </div>
                     </motion.div>
                   </DropdownMenuTrigger>
@@ -153,31 +170,36 @@ export function Navbar({ user }: any) {
                   >
                     <DropdownMenuLabel>
                       <div className="flex flex-col">
-                        <span>{userName}</span>
+                        <span className="font-semibold">{userName}</span>
                         <span className="text-xs text-emerald-400">
                           {userEmail}
                         </span>
+                        {userRole && (
+                          <span className="mt-1 text-[10px] w-max bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800 uppercase font-mono">
+                            {userRole}
+                          </span>
+                        )}
                       </div>
                     </DropdownMenuLabel>
 
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-emerald-900/60" />
 
                     {userMenuItems.map((item) => (
                       <DropdownMenuItem
                         key={item.action}
                         onClick={() => handleAction(item.action)}
-                        className="cursor-pointer"
+                        className="cursor-pointer hover:bg-emerald-900/50 focus:bg-emerald-900/50 focus:text-white"
                       >
-                        <item.icon className="mr-2 h-4 w-4" />
+                        <item.icon className="mr-2 h-4 w-4 text-emerald-400" />
                         {item.label}
                       </DropdownMenuItem>
                     ))}
 
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-emerald-900/60" />
 
                     <DropdownMenuItem
                       onClick={() => handleAction("logout")}
-                      className="cursor-pointer text-red-400"
+                      className="cursor-pointer text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout
@@ -187,7 +209,7 @@ export function Navbar({ user }: any) {
               ) : (
                 <div className="hidden md:flex items-center gap-3">
                   <Link href="/login">
-                    <span className="text-sm text-white hover:text-emerald-400">
+                    <span className="text-sm text-white hover:text-emerald-400 transition-colors">
                       Sign In
                     </span>
                   </Link>
@@ -238,7 +260,7 @@ export function Navbar({ user }: any) {
                       : "text-gray-300 hover:bg-emerald-900/40"
                   }`}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-5 w-5 text-emerald-400" />
                   {item.label}
                 </Link>
               ))}
@@ -246,34 +268,44 @@ export function Navbar({ user }: any) {
               <div className="mt-3 border-t border-emerald-900 pt-3">
                 {isLoggedIn ? (
                   <>
-                    <button
-                      onClick={() => {
-                        router.push("/profile");
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex w-full items-center gap-3 px-5 py-4 text-white hover:bg-emerald-900/40"
-                    >
-                      <User className="h-5 w-5" />
-                      My Profile
-                    </button>
+                    {/* মোবাইল ইউজার হেডার info */}
+                    <div className="flex items-center gap-3 px-5 py-3 mb-2 bg-emerald-950/40">
+                      <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-emerald-500/50 bg-black/40">
+                        {userPhoto ? (
+                          <img
+                            src={userPhoto}
+                            alt={userName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <User className="h-5 w-5 text-emerald-400" />
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-white">{userName}</span>
+                        <span className="text-xs text-emerald-400">{userEmail}</span>
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => {
-                        router.push("/settings");
-                        setMobileMenuOpen(false);
-                      }}
-                      className="flex w-full items-center gap-3 px-5 py-4 text-white hover:bg-emerald-900/40"
-                    >
-                      <LayoutDashboard className="h-5 w-5" />
-                      Dashboard
-                    </button>
+                    {/* ডায়নামিক প্রোফাইল ও ড্যাশবোর্ড লিংক */}
+                    {userMenuItems.map((item) => (
+                      <Link
+                        key={item.action}
+                        href={item.action}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex w-full items-center gap-3 px-5 py-4 text-white hover:bg-emerald-900/40 transition-colors"
+                      >
+                        <item.icon className="h-5 w-5 text-emerald-400" />
+                        <span>{item.label}</span>
+                      </Link>
+                    ))}
 
                     <button
                       onClick={() => {
                         handleAction("logout");
                         setMobileMenuOpen(false);
                       }}
-                      className="flex w-full items-center gap-3 px-5 py-4 text-red-400 hover:bg-red-500/20"
+                      className="flex w-full items-center gap-3 px-5 py-4 text-red-400 hover:bg-red-500/20 transition-colors"
                     >
                       <LogOut className="h-5 w-5" />
                       Logout
@@ -285,7 +317,7 @@ export function Navbar({ user }: any) {
                       <Button
                         onClick={() => setMobileMenuOpen(false)}
                         variant="outline"
-                        className="w-full mb-1"
+                        className="w-full mb-1 border-emerald-700 text-white hover:bg-emerald-900"
                       >
                         Sign In
                       </Button>
