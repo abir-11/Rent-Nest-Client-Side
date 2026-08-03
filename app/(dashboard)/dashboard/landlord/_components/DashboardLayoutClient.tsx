@@ -12,6 +12,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
   const navItems = [
     { id: "dashboard", label: "Overview", icon: LayoutDashboard, href: "/dashboard/landlord" },
+    { id: "addProperties", label: "Add Properties", icon: Building, href: "/dashboard/landlord/properties/new" },
     { id: "categories", label: "Create Categories", icon: Building, href: "/dashboard/landlord/categories" },
     { id: "properties", label: "My Properties", icon: Building, href: "/dashboard/landlord/properties" },
     { id: "requests", label: "Requests", icon: BellRing, href: "/dashboard/landlord/requests" },
@@ -49,9 +50,8 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
             const isActive = pathname === item.href;
             return (
               <Link key={item.id} href={item.href} onClick={() => setIsSidebarOpen(false)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                  isActive ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/30" : "text-gray-400 hover:bg-white/5 hover:text-emerald-400"
-                }`}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${isActive ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/30" : "text-gray-400 hover:bg-white/5 hover:text-emerald-400"
+                  }`}
               >
                 <item.icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>

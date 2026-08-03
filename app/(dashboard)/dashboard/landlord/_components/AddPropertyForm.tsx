@@ -1,0 +1,470 @@
+"use client";
+
+import React, { useState, useRef } from "react";
+
+import { useForm, SubmitHandler } from "react-hook-form";
+import { motion, AnimatePresence } from "framer-motion";
+import Swal from "sweetalert2";
+import {
+  Building,
+  MapPin,
+  DollarSign,
+  CheckCircle2,
+  Loader2,
+  AlignLeft,
+  X,
+  Upload,
+  Layers,
+  ArrowLeft,
+  Check,
+} from "lucide-react";
+import { createProperty } from "../_actions/property";
+import Cookies from "js-cookie";
+type PropertyFormInputs = {
+  title: string;
+  categoryId: string;
+  description: string;
+  location: string;
+  price: number;
+  amenities: string;
+  isAvailable: string;
+  images: FileList;
+};
+
+export default function AddPropertyForm({ categories }: { categories: any[] }) {
+  // সিলেক্ট করা ক্যাটাগরি ট্র্যাক রাখার জন্য স্টেট
+  const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFiles, setImageFiles] = useState<{ file: File; preview: string }[]>([]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    clearErrors,
+    formState: { errors },
+  } = useForm<PropertyFormInputs>({
+    defaultValues: {
+      isAvailable: "true",
+    },
+  });
+
+  // ক্যাটাগরি সিলেক্ট করার হ্যান্ডলার
+  const handleSelectCategory = (cat: any) => {
+    setSelectedCategory(cat);
+    const catId = cat.id || cat._id;
+    setValue("categoryId", catId, { shouldValidate: true });
+    clearErrors("categoryId");
+  };
+
+  // ছবি আপলোড ও প্রিভিউ হ্যান্ডলার
+  const { ref: imageRef, onChange: imageOnChange, ...imageRegister } = register("images");
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
+
+    const newImages = files.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+
+    const updatedImages = [...imageFiles, ...newImages];
+    setImageFiles(updatedImages);
+
+    const dataTransfer = new DataTransfer();
+    updatedImages.forEach((img) => {
+      dataTransfer.items.add(img.file);
+    });
+
+    setValue("images", dataTransfer.files, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
+
+    clearErrors("images");
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    const updatedImages = imageFiles.filter((_, index) => index !== indexToRemove);
+    setImageFiles(updatedImages);
+
+    const dt = new DataTransfer();
+    updatedImages.forEach((img) => dt.items.add(img.file));
+    setValue("images", dt.files, { shouldValidate: true });
+
+    if (updatedImages.length === 0) {
+      setValue("images", undefined as unknown as FileList, { shouldValidate: true });
+    }
+  };
+
+  // ফর্ম সাবমিট
+  const onSubmit: SubmitHandler<PropertyFormInputs> = async (data) => {
+  if (!selectedCategory) return;
+
+  setIsSubmitting(true);
+
+  const formData = new FormData();
+  const categoryVal = selectedCategory.id || selectedCategory._id;
+
+  formData.append("title", data.title);
+  formData.append("categoryId", categoryVal);
+  formData.append("categoryName", selectedCategory.name);
+  formData.append("description", data.description);
+  formData.append("location", data.location);
+  formData.append("price", data.price.toString());
+  formData.append("isAvailable", data.isAvailable);
+
+  const amenitiesArray = data.amenities
+    ? data.amenities.split(",").map((item) => item.trim()).filter(Boolean)
+    : [];
+  amenitiesArray.forEach((item) => formData.append("amenities", item));
+
+  if (imageFiles.length > 0) {
+    imageFiles.forEach((img) => {
+      formData.append("images", img.file);
+    });
+  }
+
+ try {
+  const token = Cookies.get("accessToken");
+  
+  // 👈 NEXT_PUBLIC_ ব্যবহার করুন এবং শেষের / সামলান
+  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://rent-nest-mu.vercel.app";
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+  
+  const backendUrl = `${cleanBaseUrl}/api/landlord/properties`;
+  console.log("🔗 Target API URL:", backendUrl);
+
+  const res = await fetch(backendUrl, {
+    method: "POST",
+    headers: {  
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: formData,
+  });
+
+  // Safe JSON check
+  const contentType = res.headers.get("content-type");
+  let result;
+
+  if (contentType && contentType.includes("application/json")) {
+    result = await res.json();
+  } else {
+    const htmlError = await res.text();
+    console.error("Server HTML Response:", htmlError);
+    throw new Error("Server returned non-JSON/HTML error response.");
+  }
+
+  setIsSubmitting(false);
+
+  if (res.ok) {
+    Swal.fire({
+      title: "Success!",
+      text: result.message || "Property added successfully!",
+      icon: "success",
+    });
+    setImageFiles([]);
+    setSelectedCategory(null);
+    reset();
+  } else {
+    Swal.fire({
+      title: "Error!",
+      text: result.message || "Something went wrong!",
+      icon: "error",
+    });
+  }
+} catch (error: any) {
+  setIsSubmitting(false);
+  console.error("Fetch Error:", error);
+}
+}
+  const categoryList = Array.isArray(categories) ? categories : [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden max-w-6xl mx-auto p-6 sm:p-8 space-y-8"
+    >
+      {/* ---------------- STEP 1: CATEGORY SELECTION CARDS ---------------- */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <Layers className="w-6 h-6 text-emerald-600" /> Step 1: Select Category *
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              {selectedCategory
+                ? "You can change category by clicking another card."
+                : "Choose a category under which you want to post this property."}
+            </p>
+          </div>
+          {selectedCategory && (
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategory(null);
+                setValue("categoryId", "");
+              }}
+              className="flex items-center gap-1.5 text-sm text-rose-600 hover:text-rose-700 font-semibold bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-xl transition"
+            >
+              <ArrowLeft className="w-4 h-4" /> Reset Category
+            </button>
+          )}
+        </div>
+
+        {/* Categories Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {categoryList.length > 0 ? (
+            categoryList.map((cat: any) => {
+              const catId = cat.id || cat._id;
+              const isSelected = (selectedCategory?.id || selectedCategory?._id) === catId;
+
+              return (
+                <motion.div
+                  key={catId}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleSelectCategory(cat)}
+                  className={`relative p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col items-center justify-center text-center gap-2 ${
+                    isSelected
+                      ? "border-emerald-500 bg-emerald-50/60 shadow-md ring-2 ring-emerald-500/20"
+                      : "border-gray-100 bg-gray-50/50 hover:border-emerald-200 hover:bg-emerald-50/30"
+                  }`}
+                >
+                  {/* Selected Badge Icon */}
+                  {isSelected && (
+                    <div className="absolute top-2.5 right-2.5 bg-emerald-600 text-white p-1 rounded-full shadow">
+                      <Check className="w-3.5 h-3.5" />
+                    </div>
+                  )}
+
+                  <div
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold ${
+                      isSelected
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white text-emerald-600 border border-emerald-100 shadow-sm"
+                    }`}
+                  >
+                    {cat.name ? cat.name.charAt(0).toUpperCase() : "C"}
+                  </div>
+
+                  <h3
+                    className={`font-semibold text-base capitalize ${
+                      isSelected ? "text-emerald-900 font-bold" : "text-gray-700"
+                    }`}
+                  >
+                    {cat.name}
+                  </h3>
+                </motion.div>
+              );
+            })
+          ) : (
+            <p className="text-gray-400 text-sm col-span-full">No categories available.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ---------------- STEP 2: PROPERTY FORM (SHOWS AFTER CATEGORY SELECTION) ---------------- */}
+      <AnimatePresence>
+        {selectedCategory && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-6 pt-6 border-t border-gray-100"
+          >
+            {/* Header Notification */}
+            <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 flex items-center justify-between">
+              <span className="text-sm font-semibold text-emerald-800">
+                Posting Property under: <strong className="underline">{selectedCategory.name}</strong>
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Property Title *</label>
+                <div className="relative">
+                  <Building className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("title", { required: "Title is required" })}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50"
+                    placeholder="e.g. Couple Duplex Apartment"
+                  />
+                </div>
+                {errors.title && <p className="text-rose-500 text-sm mt-1">{errors.title.message}</p>}
+              </div>
+
+              {/* Location */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Location *</label>
+                <div className="relative">
+                  <MapPin className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    {...register("location", { required: "Location is required" })}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50"
+                    placeholder="e.g. Uttara, Dhaka"
+                  />
+                </div>
+                {errors.location && <p className="text-rose-500 text-sm mt-1">{errors.location.message}</p>}
+              </div>
+
+              {/* Price */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Price (৳) *</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="number"
+                    {...register("price", { required: "Price is required", min: 1 })}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50"
+                    placeholder="4500"
+                  />
+                </div>
+                {errors.price && <p className="text-rose-500 text-sm mt-1">{errors.price.message}</p>}
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                <select
+                  {...register("isAvailable")}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50 cursor-pointer"
+                >
+                  <option value="true">Available for Rent</option>
+                  <option value="false">Currently Rented</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Description *</label>
+              <div className="relative">
+                <AlignLeft className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                <textarea
+                  rows={3}
+                  {...register("description", { required: "Description is required" })}
+                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50 resize-none"
+                  placeholder="Beautiful duplex house with modern interior..."
+                />
+              </div>
+              {errors.description && <p className="text-rose-500 text-sm mt-1">{errors.description.message}</p>}
+            </div>
+
+            {/* Amenities */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Amenities (Comma separated)</label>
+              <input
+                type="text"
+                {...register("amenities")}
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50"
+                placeholder="e.g. Parking, Garden, WiFi, Swimming Pool"
+              />
+            </div>
+
+            {/* Upload Images */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Property Images *</label>
+
+              <input
+                ref={(el) => {
+                  imageRef(el);
+                  // @ts-ignore
+                  fileInputRef.current = el;
+                }}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                {...imageRegister}
+                onChange={(e) => {
+                  imageOnChange(e);
+                  handleImageChange(e);
+                }}
+              />
+
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-emerald-300 rounded-2xl p-8 bg-emerald-50/50 hover:bg-emerald-100/50 transition cursor-pointer"
+              >
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
+                    <Upload className="w-7 h-7 text-emerald-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-800 text-base">Click to Upload Images</h3>
+                  <p className="text-gray-500 mt-1 text-xs">JPG, PNG, WEBP supported</p>
+                  {imageFiles.length > 0 && (
+                    <p className="mt-3 text-emerald-600 font-semibold text-sm">
+                      {imageFiles.length} image(s) selected
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
+            </div>
+
+            {/* Selected Images Preview Section */}
+            {imageFiles.length > 0 && (
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Selected Images ({imageFiles.length})</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                  {imageFiles.map((img, index) => (
+                    <div
+                      key={index}
+                      className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+                    >
+                      <img
+                        src={img.preview}
+                        alt={`Preview ${index}`}
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-1.5 right-1.5 bg-white/90 p-1 rounded-full text-rose-500 hover:bg-rose-500 hover:text-white transition-colors shadow-sm"
+                        title="Remove image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="flex items-center justify-center gap-2 px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/30 w-full sm:w-auto"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Saving Property...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-5 h-5" /> Add Property Under {selectedCategory.name}
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
