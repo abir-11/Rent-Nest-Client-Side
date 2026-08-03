@@ -1,10 +1,21 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Home, LogOut, Settings, User, Search, Map } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Home,
+  LogOut,
+  Settings,
+  User,
+  Search,
+  Map,
+  Menu,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,117 +41,250 @@ const userMenuItems = [
 export function Navbar({ user }: any) {
   const router = useRouter();
   const pathname = usePathname();
-  //console.log("Navbar user:", user); // Debugging line to check the user object
 
-const isLoggedIn = user?.success && !!user?.data?.user;
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-const userName = user?.data?.user?.name || "User Name";
-const userEmail = user?.data?.user?.email || "user@email.com";
+  const isLoggedIn = user?.success && !!user?.data?.user;
 
-const handleAction = async (action: string) => {
-  if (action === "logout") {
-    const res = await logoutAction();
+  const userName = user?.data?.user?.name || "User Name";
+  const userEmail = user?.data?.user?.email || "user@email.com";
 
-    if (res.success) {
-      toast.success(res.message);
-      router.push("/login");
-      router.refresh();
+  const handleAction = async (action: string) => {
+    if (action === "logout") {
+      const res = await logoutAction();
+
+      if (res.success) {
+        toast.success(res.message);
+        router.push("/login");
+        router.refresh();
+      }
+
+      return;
     }
 
-    return;
-  }
+    router.push(action);
+  };
 
-  router.push(action);
-};
   return (
     <motion.nav
-      initial={{ y: -50, opacity: 0 }}
+      initial={{ y: -60, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="absolute top-0 left-0 right-0 z-50 w-full border-b border-white/10 bg-black/20 backdrop-blur-md"
+      transition={{ duration: 0.5 }}
+      className="absolute top-0 left-0 right-0 z-50 border-b border-white/10 bg-black/20 backdrop-blur-md"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex h-20 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="shrink-0 flex items-center gap-2">
+          <Link href="/">
             <motion.div
               whileHover={{ scale: 1.05 }}
-              className="text-2xl font-extrabold text-white flex items-center gap-2 tracking-wide"
+              className="flex items-center gap-2 text-2xl font-bold text-white"
             >
-              <Home className="text-emerald-400 w-7 h-7" />
+              <Home className="h-7 w-7 text-emerald-400" />
               Rent<span className="text-emerald-400">Nest</span>
             </motion.div>
           </Link>
 
-          {/* Nav Links */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
             {navItems.map((item) => (
-              <Link key={item.href} href={item.href} className="relative group flex items-center gap-2">
-                <item.icon className="w-4 h-4 text-emerald-400/80 group-hover:text-emerald-400 transition-colors" />
-                <span className="text-sm font-medium text-white/80 group-hover:text-white transition-colors">
+              <Link
+                key={item.href}
+                href={item.href}
+                className="relative flex items-center gap-2 group"
+              >
+                <item.icon className="h-4 w-4 text-emerald-400" />
+
+                <span className="text-sm font-medium text-white/80 group-hover:text-white">
                   {item.label}
                 </span>
+
                 {pathname === item.href && (
                   <motion.div
                     layoutId="navbar-indicator"
-                    className="absolute -bottom-4 left-0 right-0 h-[2px] bg-emerald-500"
+                    className="absolute -bottom-5 left-0 right-0 h-[2px] bg-emerald-500"
                   />
                 )}
               </Link>
             ))}
           </div>
 
-          {/* Auth Section */}
-          <div className="flex items-center gap-4">
-            {isLoggedIn ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <motion.div whileHover={{ scale: 1.05 }} className="cursor-pointer">
-                    <div className="w-10 h-10 rounded-full border-2 border-emerald-500/50 flex items-center justify-center bg-black/40 overflow-hidden">
-                      <User className="w-5 h-5 text-emerald-400" />
-                    </div>
-                  </motion.div>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-[#0B1C14] border-emerald-900 text-white mt-2 shadow-2xl">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col gap-1">
-                      <p className="text-sm font-medium">{userName}</p>
-                      <p className="text-xs text-emerald-400/70">{userEmail}</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator className="bg-emerald-900/50" />
-                  {userMenuItems.map((item) => (
-                    <DropdownMenuItem
-                      key={item.action}
-                      onClick={() => handleAction(item.action)}
-                      className="hover:bg-emerald-900/80 focus:bg-emerald-900/80 cursor-pointer"
+          {/* Right Side */}
+          <div className="flex items-center gap-3">
+            {/* Desktop User */}
+            <div className="hidden md:flex items-center">
+              {isLoggedIn ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <motion.div
+                      whileHover={{ scale: 1.05 }}
+                      className="cursor-pointer"
                     >
-                      <item.icon className="w-4 h-4 mr-2 text-emerald-400" />
-                      <span>{item.label}</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-500/50 bg-black/40">
+                        <User className="h-5 w-5 text-emerald-400" />
+                      </div>
+                    </motion.div>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 border-emerald-900 bg-[#0B1C14] text-white"
+                  >
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col">
+                        <span>{userName}</span>
+                        <span className="text-xs text-emerald-400">
+                          {userEmail}
+                        </span>
+                      </div>
+                    </DropdownMenuLabel>
+
+                    <DropdownMenuSeparator />
+
+                    {userMenuItems.map((item) => (
+                      <DropdownMenuItem
+                        key={item.action}
+                        onClick={() => handleAction(item.action)}
+                        className="cursor-pointer"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {item.label}
+                      </DropdownMenuItem>
+                    ))}
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem
+                      onClick={() => handleAction("logout")}
+                      className="cursor-pointer text-red-400"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Logout
                     </DropdownMenuItem>
-                  ))}
-                  <DropdownMenuSeparator className="bg-emerald-900/50" />
-                  <DropdownMenuItem onClick={() => handleAction("logout")} className="text-red-400 hover:text-white focus:bg-red-600  cursor-pointer">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <div className="flex gap-3 items-center">
-                <Link href="/login" className="text-white hover:text-emerald-400 text-sm font-medium transition-colors hidden sm:block">
-                  Sign In
-                </Link>
-                <Link href="/register">
-                  <Button className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-full px-6 font-semibold shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
-                    Register Free
-                  </Button>
-                </Link>
-              </div>
-            )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <div className="hidden md:flex items-center gap-3">
+                  <Link href="/login">
+                    <span className="text-sm text-white hover:text-emerald-400">
+                      Sign In
+                    </span>
+                  </Link>
+
+                  <Link href="/register">
+                    <Button className="rounded-full bg-emerald-600 hover:bg-emerald-500">
+                      Register Free
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="rounded-lg p-2 text-white md:hidden"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-7 w-7" />
+              ) : (
+                <Menu className="h-7 w-7" />
+              )}
+            </button>
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -25 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -25 }}
+            transition={{ duration: 0.25 }}
+            className="border-t border-emerald-900 bg-[#07140E]/95 backdrop-blur-lg md:hidden"
+          >
+            <div className="flex flex-col py-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-5 py-4 ${
+                    pathname === item.href
+                      ? "bg-emerald-600 text-white"
+                      : "text-gray-300 hover:bg-emerald-900/40"
+                  }`}
+                >
+                  <item.icon className="h-5 w-5" />
+                  {item.label}
+                </Link>
+              ))}
+
+              <div className="mt-3 border-t border-emerald-900 pt-3">
+                {isLoggedIn ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        router.push("/profile");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-5 py-4 text-white hover:bg-emerald-900/40"
+                    >
+                      <User className="h-5 w-5" />
+                      My Profile
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        router.push("/settings");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-5 py-4 text-white hover:bg-emerald-900/40"
+                    >
+                      <Settings className="h-5 w-5" />
+                      Settings
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        handleAction("logout");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-5 py-4 text-red-400 hover:bg-red-500/20"
+                    >
+                      <LogOut className="h-5 w-5" />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-3 px-5 py-3">
+                    <Link href="/login">
+                      <Button
+                        onClick={() => setMobileMenuOpen(false)}
+                        variant="outline"
+                        className="w-full mb-1"
+                      >
+                        Sign In
+                      </Button>
+                    </Link>
+
+                    <Link href="/register">
+                      <Button
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full bg-emerald-600 hover:bg-emerald-500"
+                      >
+                        Register Free
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.nav>
   );
 }

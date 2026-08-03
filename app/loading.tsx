@@ -13,7 +13,7 @@ const GlobalLoading = () => {
             animate={{ rotate: 360 }}
             transition={{
               repeat: Infinity,
-              duration: 1,
+              duration: 0.5,
               ease: "linear",
             }}
             className="w-16 h-16 rounded-full border-4 border-gray-200 border-t-emerald-500"
@@ -29,7 +29,7 @@ const GlobalLoading = () => {
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{
             repeat: Infinity,
-            duration: 1.5,
+            duration: .8,
           }}
           className="text-lg font-semibold text-gray-800"
         >

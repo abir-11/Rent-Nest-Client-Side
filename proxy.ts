@@ -8,6 +8,7 @@ const AUTH_ROUTES = ["/login", "/register"];
 const PUBLIC_ROUTES = [
   "/",
   "/about",
+  "/properties",
   "/contact",
   "/login",
   "/register",
