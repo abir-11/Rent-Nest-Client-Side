@@ -9,6 +9,7 @@ import {
   Search,
   Map,
   Menu,
+  Contact,
   X,
   LayoutDashboard,
 } from "lucide-react";
@@ -29,11 +30,10 @@ import { logoutAction } from "@/app/(auth)/_actions/loginAction";
 
 const navItems = [
   { label: "Find Property", href: "/properties", icon: Search },
-  { label: "Categories", href: "/categories", icon: Map },
+  { label: "Contact", href: "/contact", icon:Contact },
   { label: "About Us", href: "/about", icon: Home },
 ];
 
-// রোল অনুযায়ী ড্যাশবোর্ড পাথ রিটার্ন করার ফাংশন
 const getDashboardPath = (role?: string) => {
   switch (role?.toUpperCase()) {
     case "ADMIN":
@@ -53,7 +53,6 @@ export function Navbar({ user }: any) {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // ইউজারের তথ্য সঠিকভাবে বের করা
   const isLoggedIn = user?.success && !!user?.data?.user;
   const currentUser = user?.data?.user;
 
@@ -62,10 +61,8 @@ export function Navbar({ user }: any) {
   const userRole = currentUser?.role || user?.role;
   const userPhoto = currentUser?.profilePhoto || currentUser?.image || currentUser?.avatar;
 
-  // ড্যাশবোর্ডের বেজ পাথ
   const dashboardBasePath = getDashboardPath(userRole);
 
-  // ডায়নামিক ড্রপডাউন ও মোবাইল মেনু আইটেম
   const userMenuItems = [
     {
       label: "My Profile",
@@ -149,7 +146,6 @@ export function Navbar({ user }: any) {
                       whileHover={{ scale: 1.05 }}
                       className="cursor-pointer"
                     >
-                      {/* ইউজার প্রোফাইল পিকচার অথবা আইকন */}
                       <div className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-emerald-500/50 bg-black/40">
                         {userPhoto ? (
                           <img
@@ -166,7 +162,7 @@ export function Navbar({ user }: any) {
 
                   <DropdownMenuContent
                     align="end"
-                    className="w-56 border-emerald-900 bg-[#0B1C14] text-white"
+                    className="w-56 border-gray-900 bg-[#0B1C14] text-white"
                   >
                     <DropdownMenuLabel>
                       <div className="flex flex-col">
@@ -182,7 +178,7 @@ export function Navbar({ user }: any) {
                       </div>
                     </DropdownMenuLabel>
 
-                    <DropdownMenuSeparator className="bg-emerald-900/60" />
+                    <DropdownMenuSeparator className="bg-gary-900/60" />
 
                     {userMenuItems.map((item) => (
                       <DropdownMenuItem

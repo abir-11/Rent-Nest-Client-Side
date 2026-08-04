@@ -9,9 +9,9 @@ import RegisterForm from "../_components/RegisterForm";
 
 const RegisterPage = () => {
   return (
-    <div className="min-h-screen bg-[#03150D] relative overflow-hidden flex items-center justify-center p-4 sm:p-8">
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-emerald-900/40 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen bg-gray-900 relative overflow-hidden flex items-center justify-center p-4 sm:p-8">
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-gray-600/20 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-gray-900/40 rounded-full blur-[100px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}

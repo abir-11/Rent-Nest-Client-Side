@@ -12,6 +12,7 @@ const PUBLIC_ROUTES = [
   "/contact",
   "/login",
   "/register",
+  "/data/Home.json"
 ];
 
 export async function proxy(request: NextRequest) {
