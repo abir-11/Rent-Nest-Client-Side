@@ -20,32 +20,34 @@ export default function MyRentalsClient({ rentalsData }: { rentalsData: any[] })
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
-  const handlePayment = async (item: any) => {
-    setLoadingId(item.id);
-    try {
-      // পুরো rental item পাঠাচ্ছি যাতে price ও landlordId সহজে পাওয়া যায়
-      const res = await createPayment(item);
+const handlePayment = async (item: any) => {
+  setLoadingId(item.id);
+  try {
+    const res = await createPayment(item);
 
-      if (res?.success) {
-        // ব্যাকএন্ড response structured অনুযায়ী URL redirect
-        const gatewayUrl = res?.data?.paymentUrl || res?.paymentUrl || res?.data?.url;
+    // কনসোলে চেক করে নিন ব্যাকএন্ড থেকে কি রেসপন্স আসছে
+    console.log("Payment Response:", res);
 
-        if (gatewayUrl) {
-          toast.success("Redirecting to payment gateway...");
-          window.location.href = gatewayUrl;
-        } else {
-          toast.error("Payment URL not found in API response.");
-        }
-      } else {
-        toast.error(res?.message || "Failed to initiate payment");
-      }
-    } catch (error) {
-      toast.error("An error occurred while processing payment.");
-    } finally {
-      setLoadingId(null);
+    // ব্যাকএন্ডের বিভিন্ন নেস্টেড লেভেল থেকে URL খুঁজে বের করা
+    const paymentUrl =
+      res?.data?.paymentUrl ||
+      res?.data?.data?.paymentUrl ||
+      res?.paymentUrl ||
+      res?.data?.url;
+
+    if (paymentUrl) {
+      toast.success("Redirecting to Stripe payment gateway...");
+      window.location.href = paymentUrl;
+    } else {
+      toast.error(res?.message || "Payment URL missing from response.");
     }
-  };
-
+  } catch (error) {
+    console.error("Payment error:", error);
+    toast.error("An error occurred while processing payment.");
+  } finally {
+    setLoadingId(null);
+  }
+};
   const getStatusBadge = (status: string, paymentStatus?: string) => {
     switch (status) {
       case "PENDING":

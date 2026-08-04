@@ -10,7 +10,7 @@ export async function createPayment(rentalItem: any) {
     const token = cookieStore.get("accessToken")?.value;
 
     const payload = {
-      rentalRequestId: rentalItem.id,   // ✅ backend যা আশা করছে ঠিক সেটাই
+      rentalRequestId: rentalItem.id,  
     };
 
     console.log("Sending Payment Payload:", payload);
