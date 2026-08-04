@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Building, BellRing, Menu, X ,User} from "lucide-react";
+import { LayoutDashboard, Building, BellRing, Menu, X ,User,PlusSquare,Tags,House,ClipboardList} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -12,10 +12,10 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
 
   const navItems = [
     { id: "dashboard", label: "Overview", icon: LayoutDashboard, href: "/dashboard/landlord" },
-    { id: "addProperties", label: "Add Properties", icon: Building, href: "/dashboard/landlord/properties/new" },
-    { id: "categories", label: "Create Categories", icon: Building, href: "/dashboard/landlord/categories" },
-    { id: "properties", label: "My Properties", icon: Building, href: "/dashboard/landlord/properties" },
-    { id: "requests", label: "Requests", icon: BellRing, href: "/dashboard/landlord/requests" },
+    { id: "addProperties", label: "Add Properties", icon: PlusSquare, href: "/dashboard/landlord/properties/new" },
+    { id: "categories", label: "Create Categories", icon: Tags, href: "/dashboard/landlord/categories" },
+    { id: "properties", label: "My Properties", icon:House, href: "/dashboard/landlord/properties" },
+    { id: "requests", label: "Requests", icon: ClipboardList, href: "/dashboard/landlord/requests" },
     { id: "profile", label: "My Profile", icon: User, href: "/dashboard/landlord/profile" },
   ];
 

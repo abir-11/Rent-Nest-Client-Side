@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { getSingleProperty } from "@/service/getSingleProperty";
-import { getMyProfile,postTenantRentals } from "./service/postTenantRentals";
+import { getMyProfile, postTenantRentals } from "./service/postTenantRentals";
 
 // --- Types ---
 type Category = { id: string; name: string; description: string };
@@ -23,6 +23,7 @@ type Property = {
   title: string;
   description: string;
   price: number;
+  discountPercentage?: number; // 👈 Discount Field Added
   location: string;
   amenities: string[];
   images: string[];
@@ -32,7 +33,7 @@ type Property = {
   createdAt: string;
 };
 
-type RentalStatus = "PENDING" | " REJECTED" | "APPROVED"| "ACTIVE"| " COMPLETED";
+type RentalStatus = "PENDING" | " REJECTED" | "APPROVED" | "ACTIVE" | " COMPLETED";
 
 const PropertyDetailsSkeleton = () => {
   return (
@@ -83,7 +84,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>("");
   const [isRequesting, setIsRequesting] = useState(false);
-  // Tracks the rental request lifecycle: IDLE -> PENDING -> APPROVED
   const [rentalStatus, setRentalStatus] = useState<RentalStatus>("PENDING");
 
   useEffect(() => {
@@ -103,7 +103,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
               : "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=1200&q=80"
           );
 
-          // If the property is already marked unavailable, treat it as rented
           if (!propData.isAvailable) {
             setRentalStatus("APPROVED");
           }
@@ -123,48 +122,47 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
     }
   }, [resolvedParams.id]);
 
- 
-
   const handleRequestRent = async () => {
-  const userProfile = await getMyProfile();
+    const userProfile = await getMyProfile();
 
-  if (!userProfile?.data) {
-    toast.error("Please login first");
-    router.push("/login");
-    return;
-  }
+    if (!userProfile?.data) {
+      toast.error("Please login first");
+      router.push("/login");
+      return;
+    }
 
-  if (!property) return;
+    if (!property) return;
 
-  setIsRequesting(true);
+    setIsRequesting(true);
 
-  const today = new Date();
-  const nextYear = new Date();
-  nextYear.setFullYear(today.getFullYear() + 1);
+    const today = new Date();
+    const nextYear = new Date();
+    nextYear.setFullYear(today.getFullYear() + 1);
 
-  const payload = {
-    propertyId: property.id,
-    message: "I am interested in renting this property.",
-    startDate: today.toISOString().split("T")[0],
-    endDate: nextYear.toISOString().split("T")[0],
+    const payload = {
+      propertyId: property.id,
+      message: "I am interested in renting this property.",
+      startDate: today.toISOString().split("T")[0],
+      endDate: nextYear.toISOString().split("T")[0],
+    };
+
+    try {
+      const data = await postTenantRentals(payload);
+
+      if (data?.success) {
+        toast.success("Rental request sent successfully to the landlord!");
+        setRentalStatus("PENDING");
+      } else {
+        toast.error(data?.message || "Failed to submit rental request.");
+      }
+    } catch (error) {
+      console.error("Error sending rental request:", error);
+      toast.error("Something went wrong while sending the request.");
+    } finally {
+      setIsRequesting(false);
+    }
   };
 
-  try {
-    const data = await postTenantRentals(payload);
-
-    if (data?.success) {
-      toast.success("Rental request sent successfully to the landlord!");
-      setRentalStatus("PENDING");
-    } else {
-      toast.error(data?.message || "Failed to submit rental request.");
-    }
-  } catch (error) {
-    console.error("Error sending rental request:", error);
-    toast.error("Something went wrong while sending the request.");
-  } finally {
-    setIsRequesting(false);
-  }
-};
   if (loading) {
     return <PropertyDetailsSkeleton />;
   }
@@ -182,8 +180,13 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
     );
   }
 
-  // A single source of truth for whether the request button should be actionable
   const isRentable = property.isAvailable && rentalStatus === "PENDING";
+
+  // Calculate discount price
+  const hasDiscount = Boolean(property.discountPercentage && property.discountPercentage > 0);
+  const discountedPrice = hasDiscount
+    ? property.price - (property.price * (property.discountPercentage || 0)) / 100
+    : property.price;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white pt-24 pb-20 px-4 sm:px-6 lg:px-8">
@@ -210,9 +213,28 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
           </div>
 
           <div className="flex flex-col items-start md:items-end gap-2">
-            <div className="text-3xl font-extrabold text-emerald-400">
-              ৳{property.price.toLocaleString()} <span className="text-lg text-gray-400 font-medium">/ month</span>
+            {/* Dynamic Header Price */}
+            <div className="flex items-baseline gap-2 flex-wrap">
+              {hasDiscount ? (
+                <>
+                  <span className="text-3xl font-extrabold text-emerald-400">
+                    ৳{discountedPrice.toLocaleString()}
+                  </span>
+                  <span className="text-xl text-gray-400 line-through font-medium">
+                    ৳{property.price.toLocaleString()}
+                  </span>
+                  <Badge className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-2.5 py-0.5">
+                    {property.discountPercentage}% OFF
+                  </Badge>
+                </>
+              ) : (
+                <span className="text-3xl font-extrabold text-emerald-400">
+                  ৳{property.price.toLocaleString()}
+                </span>
+              )}
+              <span className="text-lg text-gray-400 font-medium">/ month</span>
             </div>
+
             <div className="flex gap-2">
               <Badge className={`px-3 py-1 text-sm ${property.isAvailable && rentalStatus !== "APPROVED" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50" : "bg-rose-500/20 text-rose-400 border border-rose-500/50"}`}>
                 {property.isAvailable && rentalStatus !== "APPROVED" ? "Available Now" : "Currently Rented"}
@@ -314,9 +336,28 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
             <Card className="bg-gray-700 border-white/10 shadow-[0_0_40px_rgba(16,185,129,0.05)] overflow-hidden">
               <div className="h-2 bg-emerald-500 w-full" />
               <CardContent className="p-6">
-                <div className="text-3xl font-extrabold text-white mb-2">
-                  ৳{property.price.toLocaleString()}
+                
+                {/* Dynamic Sidebar Card Price */}
+                <div className="mb-2 flex items-baseline gap-2 flex-wrap">
+                  {hasDiscount ? (
+                    <>
+                      <span className="text-3xl font-extrabold text-emerald-400">
+                        ৳{discountedPrice.toLocaleString()}
+                      </span>
+                      <span className="text-lg text-gray-400 line-through font-medium">
+                        ৳{property.price.toLocaleString()}
+                      </span>
+                      <Badge className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-2 py-0.5">
+                        {property.discountPercentage}% OFF
+                      </Badge>
+                    </>
+                  ) : (
+                    <span className="text-3xl font-extrabold text-white">
+                      ৳{property.price.toLocaleString()}
+                    </span>
+                  )}
                 </div>
+
                 <p className="text-gray-400 text-sm mb-6 pb-6 border-b border-white/10">
                   Monthly rent · Excluding utility bills
                 </p>
@@ -346,8 +387,6 @@ export default function PropertyDetailsPage({ params }: { params: Promise<{ id: 
                     "Currently Unavailable"
                   )}
                 </Button>
-
-
 
                 <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-400">
                   <ShieldCheck className="h-4 w-4 text-emerald-500" />

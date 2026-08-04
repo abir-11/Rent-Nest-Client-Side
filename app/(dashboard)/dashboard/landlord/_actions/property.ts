@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { IProperty } from "../_components/AddPropertyForm";
 
 // 1. Get Categories for Dropdown
 export const getCategories = async () => {
@@ -25,31 +26,28 @@ export const getCategories = async () => {
   }
 };
 
-// 2. Add New Property 
-export const createProperty = async (formData: FormData) => {
+export const createProperty = async (payload: IProperty) => {
   try {
-
-
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
-
     const cookieStore = await cookies();
     const token = cookieStore.get("accessToken")?.value;
 
     const url = `${process.env.BACKEND_API_URL}/api/landlord/properties`;
 
-    const res = await fetch(url, {
+    // 💡 ব্যাকএন্ড যদি সরাসরি object না চেয়ে req.body.payload বা req.body উভয়টি আশা করতে পারে,
+    // সেক্ষেত্রে { payload } অথবা সরাসরি payload পাঠানোর সঠিক ফরমেট:
+    const response = await fetch(url, {
       method: "POST",
       headers: {
+        "Content-Type": "application/json",
         ...(token && { Authorization: `Bearer ${token}` }),
       },
-      body: formData,
+      // ব্যাকএন্ড যদি req.body.payload খোজে, তবে { payload } ব্যবহার করুন
+      body: JSON.stringify(payload),
     });
 
-    const result = await res.json();
+    const result = await response.json();
 
-    if (!res.ok) {
+    if (!response.ok) {
       return {
         success: false,
         message: result.message || "Failed to add property",

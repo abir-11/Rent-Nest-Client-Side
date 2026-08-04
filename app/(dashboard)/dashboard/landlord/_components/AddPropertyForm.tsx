@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
-
+import React, { useState } from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
@@ -13,12 +12,26 @@ import {
   Loader2,
   AlignLeft,
   X,
-  Upload,
+  Link as LinkIcon,
   Layers,
   ArrowLeft,
   Check,
+  Plus,
 } from "lucide-react";
 import { createProperty } from "../_actions/property";
+
+// ✅ আপনার দেওয়া IProperty ইন্টারফেস
+export interface IProperty {
+  landlordId?: string;
+  categoryId: string;
+  title: string;
+  description: string;
+  location: string;
+  price: number;
+  images?: string[];
+  amenities: string[];
+  isAvailable?: boolean;
+}
 
 type PropertyFormInputs = {
   title: string;
@@ -28,16 +41,14 @@ type PropertyFormInputs = {
   price: number;
   amenities: string;
   isAvailable: string;
-  images: FileList;
 };
 
 export default function AddPropertyForm({ categories }: { categories: any[] }) {
-  // সিলেক্ট করা ক্যাটাগরি ট্র্যাক রাখার জন্য স্টেট
   const [selectedCategory, setSelectedCategory] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageFiles, setImageFiles] = useState<{ file: File; preview: string }[]>([]);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [currentUrl, setCurrentUrl] = useState("");
 
   const {
     register,
@@ -52,7 +63,6 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
     },
   });
 
-  // ক্যাটাগরি সিলেক্ট করার হ্যান্ডলার
   const handleSelectCategory = (cat: any) => {
     setSelectedCategory(cat);
     const catId = cat.id || cat._id;
@@ -60,80 +70,49 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
     clearErrors("categoryId");
   };
 
-  // ছবি আপলোড ও প্রিভিউ হ্যান্ডলার
-  const { ref: imageRef, onChange: imageOnChange, ...imageRegister } = register("images");
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-
-    const newImages = files.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }));
-
-    const updatedImages = [...imageFiles, ...newImages];
-    setImageFiles(updatedImages);
-
-    const dataTransfer = new DataTransfer();
-    updatedImages.forEach((img) => {
-      dataTransfer.items.add(img.file);
-    });
-
-    setValue("images", dataTransfer.files, {
-      shouldValidate: true,
-      shouldDirty: true,
-      shouldTouch: true,
-    });
-
-    clearErrors("images");
+  const handleAddImageUrl = () => {
+    if (!currentUrl.trim()) return;
+    setImageUrls([...imageUrls, currentUrl.trim()]);
+    setCurrentUrl("");
   };
 
-  const removeImage = (indexToRemove: number) => {
-    const updatedImages = imageFiles.filter((_, index) => index !== indexToRemove);
-    setImageFiles(updatedImages);
-
-    const dt = new DataTransfer();
-    updatedImages.forEach((img) => dt.items.add(img.file));
-    setValue("images", dt.files, { shouldValidate: true });
-
-    if (updatedImages.length === 0) {
-      setValue("images", undefined as unknown as FileList, { shouldValidate: true });
-    }
+  const handleRemoveImageUrl = (indexToRemove: number) => {
+    setImageUrls(imageUrls.filter((_, index) => index !== indexToRemove));
   };
 
-  // ফর্ম সাবমিট
   const onSubmit: SubmitHandler<PropertyFormInputs> = async (data) => {
     if (!selectedCategory) return;
 
-    setIsSubmitting(true);
-
-    const formData = new FormData();
-    const categoryVal = selectedCategory.id || selectedCategory._id;
-
-    formData.append("title", data.title);
-    formData.append("categoryId", categoryVal);
-    formData.append("categoryName", selectedCategory.name);
-    formData.append("description", data.description);
-    formData.append("location", data.location);
-    formData.append("price", data.price.toString());
-    formData.append("isAvailable", data.isAvailable);
-
-    const amenitiesArray = data.amenities
-      ? data.amenities.split(",").map((item) => item.trim()).filter(Boolean)
-      : [];
-    amenitiesArray.forEach((item) => formData.append("amenities", item));
-
-    if (imageFiles.length > 0) {
-      imageFiles.forEach((img) => {
-        formData.append("images", img.file);
+    if (imageUrls.length === 0) {
+      Swal.fire({
+        title: "Warning!",
+        text: "Please add at least one image URL!",
+        icon: "warning",
       });
+      return;
     }
 
+    setIsSubmitting(true);
+
+    // ✅ IProperty ইন্টারফেস অনুযায়ী নিখুঁত Payload তৈরি
+    const payload: IProperty = {
+      title: data.title.trim(),
+      description: data.description.trim(),
+      location: data.location.trim(),
+      price: Number(data.price), // Explicitly Number type
+      categoryId: String(selectedCategory.id || selectedCategory._id),
+      isAvailable: data.isAvailable === "true", // Convert String to Boolean
+      amenities: data.amenities
+        ? data.amenities
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean)
+        : [],
+      images: imageUrls,
+    };
+
     try {
-      // ✅ browser থেকে সরাসরি fetch না করে, server action ব্যবহার করা হচ্ছে
-      // এতে CORS-এর সমস্যা হয় না, আর httpOnly accessToken cookie ঠিকভাবে সার্ভার সাইডে পড়া যায়
-      const result = await createProperty(formData);
+      const result = await createProperty(payload);
 
       setIsSubmitting(false);
 
@@ -143,7 +122,8 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
           text: result.message || "Property added successfully!",
           icon: "success",
         });
-        setImageFiles([]);
+
+        setImageUrls([]);
         setSelectedCategory(null);
         reset();
       } else {
@@ -153,9 +133,9 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
           icon: "error",
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       setIsSubmitting(false);
-      console.error("Submit Error:", error);
+
       Swal.fire({
         title: "Error!",
         text: "Something went wrong while submitting the form!",
@@ -172,7 +152,6 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
       animate={{ opacity: 1, y: 0 }}
       className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden max-w-6xl mx-auto p-6 sm:p-8 space-y-8"
     >
-      {/* ---------------- STEP 1: CATEGORY SELECTION CARDS ---------------- */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -218,7 +197,6 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
                       : "border-gray-100 bg-gray-50/50 hover:border-emerald-200 hover:bg-emerald-50/30"
                   }`}
                 >
-                  {/* Selected Badge Icon */}
                   {isSelected && (
                     <div className="absolute top-2.5 right-2.5 bg-emerald-600 text-white p-1 rounded-full shadow">
                       <Check className="w-3.5 h-3.5" />
@@ -251,7 +229,7 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
         </div>
       </div>
 
-      {/* ---------------- STEP 2: PROPERTY FORM (SHOWS AFTER CATEGORY SELECTION) ---------------- */}
+      {/* ---------------- STEP 2: PROPERTY FORM ---------------- */}
       <AnimatePresence>
         {selectedCategory && (
           <motion.form
@@ -307,7 +285,7 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
                   <DollarSign className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
                   <input
                     type="number"
-                    {...register("price", { required: "Price is required", min: 1 })}
+                    {...register("price", { required: "Price is required", valueAsNumber: true, min: 1 })}
                     className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50"
                     placeholder="4500"
                   />
@@ -354,66 +332,57 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
               />
             </div>
 
-            {/* Upload Images */}
+            {/* Image URLs Section */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-3">Property Images *</label>
-
-              <input
-                ref={(el) => {
-                  imageRef(el);
-                  // @ts-ignore
-                  fileInputRef.current = el;
-                }}
-                type="file"
-                accept="image/*"
-                multiple
-                className="hidden"
-                {...imageRegister}
-                onChange={(e) => {
-                  imageOnChange(e);
-                  handleImageChange(e);
-                }}
-              />
-
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-emerald-300 rounded-2xl p-8 bg-emerald-50/50 hover:bg-emerald-100/50 transition cursor-pointer"
-              >
-                <div className="flex flex-col items-center justify-center text-center">
-                  <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center mb-3">
-                    <Upload className="w-7 h-7 text-emerald-600" />
-                  </div>
-                  <h3 className="font-semibold text-gray-800 text-base">Click to Upload Images</h3>
-                  <p className="text-gray-500 mt-1 text-xs">JPG, PNG, WEBP supported</p>
-                  {imageFiles.length > 0 && (
-                    <p className="mt-3 text-emerald-600 font-semibold text-sm">
-                      {imageFiles.length} image(s) selected
-                    </p>
-                  )}
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Property Image URLs *</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <LinkIcon className="absolute left-4 top-3.5 w-5 h-5 text-gray-400" />
+                  <input
+                    type="url"
+                    value={currentUrl}
+                    onChange={(e) => setCurrentUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddImageUrl();
+                      }
+                    }}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 outline-none bg-gray-50/50 text-sm"
+                    placeholder="https://example.com/image.jpg"
+                  />
                 </div>
+                <button
+                  type="button"
+                  onClick={handleAddImageUrl}
+                  className="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" /> Add
+                </button>
               </div>
-
-              {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images.message}</p>}
             </div>
 
-            {/* Selected Images Preview Section */}
-            {imageFiles.length > 0 && (
-              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Selected Images ({imageFiles.length})</p>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-                  {imageFiles.map((img, index) => (
+            {/* Added Image URLs Preview */}
+            {imageUrls.length > 0 && (
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3">
+                <p className="text-sm font-semibold text-gray-700">Added Images ({imageUrls.length})</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {imageUrls.map((url, index) => (
                     <div
                       key={index}
-                      className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 shadow-sm"
+                      className="relative group aspect-video rounded-xl overflow-hidden border border-gray-200 bg-gray-100"
                     >
                       <img
-                        src={img.preview}
-                        alt={`Preview ${index}`}
-                        className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                        src={url}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).setAttribute('src', 'https://via.placeholder.com/150?text=Invalid+URL');
+                        }}
                       />
                       <button
                         type="button"
-                        onClick={() => removeImage(index)}
+                        onClick={() => handleRemoveImageUrl(index)}
                         className="absolute top-1.5 right-1.5 bg-white/90 p-1 rounded-full text-rose-500 hover:bg-rose-500 hover:text-white transition-colors shadow-sm"
                         title="Remove image"
                       >

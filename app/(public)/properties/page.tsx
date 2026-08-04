@@ -23,6 +23,7 @@ type Property = {
   title: string;
   description: string;
   price: number;
+  discountPercentage?: number; // 👈 Discount Field Added
   location: string;
   amenities: string[];
   images: string[];
@@ -148,7 +149,7 @@ export default function PropertiesPage() {
               </select>
             </div>
 
-            {/*  Filter Button Updated */}
+            {/* Filter Button */}
             <Button 
               onClick={() => setIsSidebarOpen(true)}
               variant="outline" 
@@ -192,105 +193,128 @@ export default function PropertiesPage() {
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             <AnimatePresence>
-              {properties.map((property) => (
-                <motion.div key={property.id} variants={cardVariants} layout>
-                  <Card className="group relative bg-gray-800 border-white/10 overflow-hidden rounded-xl hover:border-emerald-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col h-full">
+              {properties.map((property) => {
+                // Calculate discounted price if applicable
+                const hasDiscount = Boolean(property.discountPercentage && property.discountPercentage > 0);
+                const discountedPrice = hasDiscount
+                  ? property.price - (property.price * (property.discountPercentage || 0)) / 100
+                  : property.price;
 
-                    {/* Image Section */}
-                    <div className="relative h-56 w-full overflow-hidden rounded-t-xl bg-gray-900">
-                      
-                      {/*  Image Fallback Bug Fixed */}
-                      <Image
-                        src={
-                          property.images?.[0] && property.images[0].startsWith("http")
-                            ? property.images[0]
-                            : "https://placehold.co/800x600/png?text=No+Image"
-                        }
-                        alt={property.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                        sizes="(max-width:768px) 100vw, (max-width:1200px) 50vw, 33vw"
-                        onError={(e) => {
-                          e.currentTarget.srcset = "";
-                          e.currentTarget.src = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80";
-                        }}
-                      />
+                return (
+                  <motion.div key={property.id} variants={cardVariants} layout>
+                    <Card className="group relative bg-gray-800 border-white/10 overflow-hidden rounded-xl hover:border-emerald-500/50 transition-all duration-300 shadow-lg hover:shadow-[0_0_30px_rgba(16,185,129,0.15)] flex flex-col h-full">
 
-                      {/* Status Badge */}
-                      <Badge
-                        className={`absolute top-4 left-4 font-semibold px-3 py-1 ${property.isAvailable
-                          ? "bg-emerald-500/90 hover:bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                          : "bg-rose-500/90 hover:bg-rose-500 text-white"
-                          }`}
-                      >
-                        {property.isAvailable ? "Available" : "Rented Out"}
-                      </Badge>
+                      {/* Image Section */}
+                      <div className="relative h-56 w-full overflow-hidden rounded-t-xl bg-gray-900">
+                        <Image
+                          src={
+                            property.images?.[0] && property.images[0].startsWith("http")
+                              ? property.images[0]
+                              : "https://placehold.co/800x600/png?text=No+Image"
+                          }
+                          alt={property.title}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="(max-width:768px) 100vw, (max-width:1200px) 50vw, 33vw"
+                          onError={(e) => {
+                            e.currentTarget.srcset = "";
+                            e.currentTarget.src = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&q=80";
+                          }}
+                        />
 
-                      {/* Category Badge */}
-                      {property.category && (
-                        <Badge variant="outline" className="absolute top-4 right-4 bg-black/40 backdrop-blur-md border-white/20 text-white">
-                          {property.category.name}
+                        {/* Status Badge */}
+                        <Badge
+                          className={`absolute top-4 left-4 font-semibold px-3 py-1 ${property.isAvailable
+                            ? "bg-emerald-500/90 hover:bg-emerald-500 text-white shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                            : "bg-rose-500/90 hover:bg-rose-500 text-white"
+                            }`}
+                        >
+                          {property.isAvailable ? "Available" : "Rented Out"}
                         </Badge>
-                      )}
-                    </div>
 
-                    <CardHeader className="p-5 pb-0">
-                      <div className="flex justify-between items-start gap-4">
-                        <div>
-                          <h3 className="text-xl font-bold text-white line-clamp-1 group-hover:text-emerald-400 transition-colors">
-                            {property.title}
-                          </h3>
-                          <div className="flex items-center gap-1.5 mt-2 text-gray-400 text-sm">
-                            <MapPin className="h-4 w-4 text-emerald-500" />
-                            <span className="truncate">{property.location}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="p-5 flex-grow">
-                      <div className="mt-2 mb-4">
-                        <span className="text-2xl font-extrabold text-emerald-400">৳{property.price.toLocaleString()}</span>
-                        <span className="text-gray-400 text-sm font-medium"> / month</span>
-                      </div>
-
-                      {/* Amenities List */}
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {property.amenities?.slice(0, 3).map((amenity, idx) => (
-                          <div key={idx} className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md border border-white/5 text-xs text-gray-300">
-                            {(amenity.toLowerCase().includes("wifi") || amenity.toLowerCase().includes("wife")) && <Wifi className="h-3 w-3 text-emerald-500" />}
-                            {amenity.toLowerCase().includes("parking") && <Car className="h-3 w-3 text-emerald-500" />}
-                            {amenity.toLowerCase().includes("security") && <ShieldCheck className="h-3 w-3 text-emerald-500" />}
-                            {(amenity.toLowerCase().includes("bed") || amenity.toLowerCase().includes("lift")) && <BedDouble className="h-3 w-3 text-emerald-500" />}
-                            <span>{amenity}</span>
-                          </div>
-                        ))}
-                        {property.amenities && property.amenities.length > 3 && (
-                          <div className="flex items-center bg-white/5 px-2 py-1 rounded-md border border-white/5 text-xs text-gray-400">
-                            +{property.amenities.length - 3} more
-                          </div>
+                        {/* Category Badge */}
+                        {property.category && (
+                          <Badge variant="outline" className="absolute top-4 right-4 bg-black/40 backdrop-blur-md border-white/20 text-white">
+                            {property.category.name}
+                          </Badge>
                         )}
                       </div>
-                    </CardContent>
 
-                    <CardFooter className="p-5 pt-0 mt-auto border-t border-white/5 flex items-center justify-between">
-                      <div className="flex items-center gap-2 pt-4">
-                        <div className="w-8 h-8 rounded-full bg-emerald-900/50 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-sm">
-                          {property.landlord?.name?.charAt(0) || "U"}
+                      <CardHeader className="p-5 pb-0">
+                        <div className="flex justify-between items-start gap-4">
+                          <div>
+                            <h3 className="text-xl font-bold text-white line-clamp-1 group-hover:text-emerald-400 transition-colors">
+                              {property.title}
+                            </h3>
+                            <div className="flex items-center gap-1.5 mt-2 text-gray-400 text-sm">
+                              <MapPin className="h-4 w-4 text-emerald-500" />
+                              <span className="truncate">{property.location}</span>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-xs text-gray-400 font-medium truncate w-24">
-                          {property.landlord?.name || "Unknown"}
-                        </span>
-                      </div>
-                      <Button asChild className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-md transition-all">
-                        <Link href={`/properties/${property.id}`}>
-                          View Details
-                        </Link>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardHeader>
+
+                      <CardContent className="p-5 flex-grow">
+                        {/* Dynamic Price & Discount Section */}
+                        <div className="mt-2 mb-4 flex items-baseline gap-2 flex-wrap">
+                          {hasDiscount ? (
+                            <>
+                              <span className="text-2xl font-extrabold text-emerald-400">
+                                ৳{discountedPrice.toLocaleString()}
+                              </span>
+                              <span className="text-sm text-gray-400 line-through font-medium">
+                                ৳{property.price.toLocaleString()}
+                              </span>
+                              <Badge className="bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs px-2 py-0.5">
+                                {property.discountPercentage}% OFF
+                              </Badge>
+                            </>
+                          ) : (
+                            <span className="text-2xl font-extrabold text-emerald-400">
+                              ৳{property.price.toLocaleString()}
+                            </span>
+                          )}
+                          <span className="text-gray-400 text-sm font-medium">/ month</span>
+                        </div>
+
+                        {/* Amenities List */}
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {property.amenities?.slice(0, 3).map((amenity, idx) => (
+                            <div key={idx} className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-md border border-white/5 text-xs text-gray-300">
+                              {(amenity.toLowerCase().includes("wifi") || amenity.toLowerCase().includes("wife")) && <Wifi className="h-3 w-3 text-emerald-500" />}
+                              {amenity.toLowerCase().includes("parking") && <Car className="h-3 w-3 text-emerald-500" />}
+                              {amenity.toLowerCase().includes("security") && <ShieldCheck className="h-3 w-3 text-emerald-500" />}
+                              {(amenity.toLowerCase().includes("bed") || amenity.toLowerCase().includes("lift")) && <BedDouble className="h-3 w-3 text-emerald-500" />}
+                              <span>{amenity}</span>
+                            </div>
+                          ))}
+                          {property.amenities && property.amenities.length > 3 && (
+                            <div className="flex items-center bg-white/5 px-2 py-1 rounded-md border border-white/5 text-xs text-gray-400">
+                              +{property.amenities.length - 3} more
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+
+                      <CardFooter className="p-5 pt-0 mt-auto border-t border-white/5 flex items-center justify-between">
+                        <div className="flex items-center gap-2 pt-4">
+                          <div className="w-8 h-8 rounded-full bg-emerald-900/50 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-sm">
+                            {property.landlord?.name?.charAt(0) || "U"}
+                          </div>
+                          <span className="text-xs text-gray-400 font-medium truncate w-24">
+                            {property.landlord?.name || "Unknown"}
+                          </span>
+                        </div>
+                        <Button asChild className="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl shadow-md transition-all">
+                          <Link href={`/properties/${property.id}`}>
+                            View Details
+                          </Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
           </motion.div>
         )}

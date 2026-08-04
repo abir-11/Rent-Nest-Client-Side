@@ -10,7 +10,6 @@ export default async function MyPropertiesPage({
   const response = await getLandLordProperties();
   let properties = response?.data || [];
 
-  // --- 🔴 Search Params Filtering & Sorting (Server Side) ---
   const search = searchParams?.search?.toLowerCase() || "";
   const sort = searchParams?.sort || "newest";
 
