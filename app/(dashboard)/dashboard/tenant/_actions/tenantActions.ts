@@ -20,13 +20,10 @@ export async function getTenantRentals() {
 
     if (!res.ok) throw new Error("Failed to fetch rentals");
 
-    // ১. রেসপন্স একবারই পার্স করে ভেরিয়েবলে রাখুন
     const data = await res.json();
 
-    // ২. এবার নিরাপদে কনসোল লগ করুন
     console.log("Fetched Rentals Data:", data);
 
-    // ৩. পার্স করা ডেটা রিটার্ন করুন
     return data;
   } catch (error: any) {
     console.error("Rentals fetch error:", error);

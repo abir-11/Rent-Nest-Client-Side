@@ -7,7 +7,6 @@ export default async function TenantPaymentsPage() {
   if (Array.isArray(response)) rentals = response;
   else if (Array.isArray(response?.data)) rentals = response.data;
 
-  // শুধুমাত্র PAID স্ট্যাটাসের পেমেন্ট ফিল্টার
   const paidHistory = rentals.filter(r => r.paymentStatus === "PAID");
 
   return (

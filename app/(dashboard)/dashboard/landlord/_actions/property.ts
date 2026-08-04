@@ -28,8 +28,7 @@ export const getCategories = async () => {
 // 2. Add New Property 
 export const createProperty = async (formData: FormData) => {
   try {
-    // 👇 এখানে check করো
-    console.log("===== FormData =====");
+
 
     for (const [key, value] of formData.entries()) {
       console.log(key, value);

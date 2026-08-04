@@ -19,7 +19,7 @@ import {
   Check,
 } from "lucide-react";
 import { createProperty } from "../_actions/property";
-import Cookies from "js-cookie";
+
 type PropertyFormInputs = {
   title: string;
   categoryId: string;
@@ -104,85 +104,66 @@ export default function AddPropertyForm({ categories }: { categories: any[] }) {
 
   // ফর্ম সাবমিট
   const onSubmit: SubmitHandler<PropertyFormInputs> = async (data) => {
-  if (!selectedCategory) return;
+    if (!selectedCategory) return;
 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  const formData = new FormData();
-  const categoryVal = selectedCategory.id || selectedCategory._id;
+    const formData = new FormData();
+    const categoryVal = selectedCategory.id || selectedCategory._id;
 
-  formData.append("title", data.title);
-  formData.append("categoryId", categoryVal);
-  formData.append("categoryName", selectedCategory.name);
-  formData.append("description", data.description);
-  formData.append("location", data.location);
-  formData.append("price", data.price.toString());
-  formData.append("isAvailable", data.isAvailable);
+    formData.append("title", data.title);
+    formData.append("categoryId", categoryVal);
+    formData.append("categoryName", selectedCategory.name);
+    formData.append("description", data.description);
+    formData.append("location", data.location);
+    formData.append("price", data.price.toString());
+    formData.append("isAvailable", data.isAvailable);
 
-  const amenitiesArray = data.amenities
-    ? data.amenities.split(",").map((item) => item.trim()).filter(Boolean)
-    : [];
-  amenitiesArray.forEach((item) => formData.append("amenities", item));
+    const amenitiesArray = data.amenities
+      ? data.amenities.split(",").map((item) => item.trim()).filter(Boolean)
+      : [];
+    amenitiesArray.forEach((item) => formData.append("amenities", item));
 
-  if (imageFiles.length > 0) {
-    imageFiles.forEach((img) => {
-      formData.append("images", img.file);
-    });
-  }
+    if (imageFiles.length > 0) {
+      imageFiles.forEach((img) => {
+        formData.append("images", img.file);
+      });
+    }
 
- try {
-  const token = Cookies.get("accessToken");
-  
-  // 👈 NEXT_PUBLIC_ ব্যবহার করুন এবং শেষের / সামলান
-  const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://rent-nest-mu.vercel.app";
-  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-  
-  const backendUrl = `${cleanBaseUrl}/api/landlord/properties`;
-  console.log("🔗 Target API URL:", backendUrl);
+    try {
+      // ✅ browser থেকে সরাসরি fetch না করে, server action ব্যবহার করা হচ্ছে
+      // এতে CORS-এর সমস্যা হয় না, আর httpOnly accessToken cookie ঠিকভাবে সার্ভার সাইডে পড়া যায়
+      const result = await createProperty(formData);
 
-  const res = await fetch(backendUrl, {
-    method: "POST",
-    headers: {  
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    body: formData,
-  });
+      setIsSubmitting(false);
 
-  // Safe JSON check
-  const contentType = res.headers.get("content-type");
-  let result;
+      if (result.success) {
+        Swal.fire({
+          title: "Success!",
+          text: result.message || "Property added successfully!",
+          icon: "success",
+        });
+        setImageFiles([]);
+        setSelectedCategory(null);
+        reset();
+      } else {
+        Swal.fire({
+          title: "Error!",
+          text: result.message || "Something went wrong!",
+          icon: "error",
+        });
+      }
+    } catch (error: any) {
+      setIsSubmitting(false);
+      console.error("Submit Error:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Something went wrong while submitting the form!",
+        icon: "error",
+      });
+    }
+  };
 
-  if (contentType && contentType.includes("application/json")) {
-    result = await res.json();
-  } else {
-    const htmlError = await res.text();
-    console.error("Server HTML Response:", htmlError);
-    throw new Error("Server returned non-JSON/HTML error response.");
-  }
-
-  setIsSubmitting(false);
-
-  if (res.ok) {
-    Swal.fire({
-      title: "Success!",
-      text: result.message || "Property added successfully!",
-      icon: "success",
-    });
-    setImageFiles([]);
-    setSelectedCategory(null);
-    reset();
-  } else {
-    Swal.fire({
-      title: "Error!",
-      text: result.message || "Something went wrong!",
-      icon: "error",
-    });
-  }
-} catch (error: any) {
-  setIsSubmitting(false);
-  console.error("Fetch Error:", error);
-}
-}
   const categoryList = Array.isArray(categories) ? categories : [];
 
   return (

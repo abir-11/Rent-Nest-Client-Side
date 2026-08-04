@@ -7,7 +7,6 @@ import Link from "next/link";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 
 export default function TenantOverviewClient({ rentals = [] }: { rentals: any[] }) {
-  // Safe Array ensure করা
   const safeRentals = Array.isArray(rentals) ? rentals : [];
 
   // Stats calculation
@@ -16,12 +15,16 @@ export default function TenantOverviewClient({ rentals = [] }: { rentals: any[] 
   const pendingRequests = safeRentals.filter(r => r.status === "PENDING").length;
   
   const totalSpent = safeRentals
-    .filter(r => r.paymentStatus === "PAID")
-    .reduce((acc, r) => acc + (r.amount || r.rentAmount || r.property?.price || 0), 0);
+    .filter(r => r.status === "ACTIVE" || r.status === "COMPLETED")
+    .reduce((acc, r) => acc + (r.amount || r.rentAmount || r.properties?.price || 0), 0);
 
-  const chartData = safeRentals.map((r, i) => ({
-    name: r.property?.title?.slice(0, 10) || `Stay #${i + 1}`,
-    Amount: r.amount || r.rentAmount || r.property?.price || 0,
+const chartData = safeRentals
+  .filter(
+    (r) => r.status === "ACTIVE" || r.status === "COMPLETED"
+  )
+  .map((r, i) => ({
+    name: r.properties?.title?.slice(0, 10) || `Stay #${i + 1}`,
+    Amount: r.amount || r.rentAmount || r.properties?.price || 0,
   }));
 
   return (
@@ -73,7 +76,7 @@ export default function TenantOverviewClient({ rentals = [] }: { rentals: any[] 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-900">Recent Rental Requests</h3>
-          <Link href="/dashboard/tenant/requests" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">View All</Link>
+          <Link href="/dashboard/tenant/my-rentals" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">View All</Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
@@ -83,7 +86,6 @@ export default function TenantOverviewClient({ rentals = [] }: { rentals: any[] 
                 <th className="px-6 py-4 font-semibold">Amount</th>
                 <th className="px-6 py-4 font-semibold">Status</th>
                 <th className="px-6 py-4 font-semibold">Payment</th>
-                <th className="px-6 py-4 font-semibold text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -96,32 +98,30 @@ export default function TenantOverviewClient({ rentals = [] }: { rentals: any[] 
               ) : (
                 safeRentals.slice(0, 5).map((rental) => (
                   <tr key={rental.id || rental._id} className="hover:bg-gray-50/50">
-                    <td className="px-6 py-4 font-medium text-gray-900">{rental.property?.title || "Apartment/Hotel"}</td>
-                    <td className="px-6 py-4 font-semibold text-emerald-600">৳{rental.amount || rental.rentAmount || rental.property?.price || 0}</td>
+                    <td className="px-6 py-4 font-medium text-gray-900">{rental.properties?.title || "Apartment/Hotel"}</td>
+                    <td className="px-6 py-4 font-semibold text-emerald-600">৳{rental.amount || rental.rentAmount || rental.properties?.price || 0}</td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        rental.status === "APPROVED" || rental.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
-                        rental.status === "REJECTED" ? "bg-rose-100 text-rose-700" : "bg-amber-100 text-amber-700"
+                        rental.status === "ACTIVE" || rental.status === "COMPLETED" ? "bg-emerald-100 text-emerald-700" :
+                        rental.status === "APPROVED" ?  "bg-amber-100 text-amber-700" : rental.status === "REJECTED" ? "bg-rose-100 text-rose-700" :"bg-amber-100 text-amber-700"
                       }`}>
                         {rental.status || "PENDING"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                        rental.paymentStatus === "PAID" ? "bg-blue-100 text-blue-700" : "bg-orange-100 text-orange-700"
-                      }`}>
-                        {rental.paymentStatus || "UNPAID"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {rental.status === "APPROVED" && rental.paymentStatus !== "PAID" ? (
-                        <Link href={`/dashboard/tenant/requests/${rental.id || rental._id}/pay`} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1">
-                          <CreditCard className="w-3.5 h-3.5" /> Pay
-                        </Link>
-                      ) : (
-                        <span className="text-gray-400 text-xs">N/A</span>
-                      )}
-                    </td>
+                   <td className="px-6 py-4">
+  <span
+    className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+      rental.status === "ACTIVE" || rental.status === "COMPLETED"
+        ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+        : "bg-red-50 text-red-700 border border-red-200"
+    }`}
+  >
+    {rental.status === "ACTIVE" || rental.status === "COMPLETED"
+      ? "PAID"
+      : "UNPAID"}
+  </span>
+</td>
+                   
                   </tr>
                 ))
               )}

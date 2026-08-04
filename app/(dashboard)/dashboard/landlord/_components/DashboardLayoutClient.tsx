@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Building, BellRing, Menu, X } from "lucide-react";
+import { LayoutDashboard, Building, BellRing, Menu, X ,User} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,6 +16,7 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
     { id: "categories", label: "Create Categories", icon: Building, href: "/dashboard/landlord/categories" },
     { id: "properties", label: "My Properties", icon: Building, href: "/dashboard/landlord/properties" },
     { id: "requests", label: "Requests", icon: BellRing, href: "/dashboard/landlord/requests" },
+    { id: "profile", label: "My Profile", icon: User, href: "/dashboard/landlord/profile" },
   ];
 
   return (

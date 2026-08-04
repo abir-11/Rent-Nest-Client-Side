@@ -21,9 +21,8 @@ export default function TenantDashboardLayout({ children }: { children: React.Re
 
   const navItems = [
     { id: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard/tenant" },
-    { id: "completed", label: "Stayed/Completed", icon: CheckCircle2, href: "/dashboard/tenant/completed" },
-    { id: "payments", label: "Payment History", icon: CreditCard, href: "/dashboard/tenant/payments" },
-    { id: "requests", label: "Rental Requests", icon: FileText, href: "/dashboard/tenant/requests" },
+    { id: "payments", label: "Payment History", icon: CreditCard, href: "/dashboard/tenant/payment/history" },
+    { id: "requests", label: "My Rental Requests", icon: FileText, href: "/dashboard/tenant/my-rentals" },
     { id: "profile", label: "My Profile", icon: User, href: "/dashboard/tenant/profile" },
   ];
 
