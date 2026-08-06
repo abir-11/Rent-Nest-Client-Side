@@ -94,10 +94,10 @@ export default function Footer() {
             {/* Social Icons (Fixed) */}
             <div className="flex items-center gap-3 pt-2">
               {[
-                { Icon: FacebookIcon, href: "#", label: "Facebook" },
-                { Icon: TwitterIcon, href: "#", label: "Twitter" },
-                { Icon: InstagramIcon, href: "#", label: "Instagram" },
-                { Icon: LinkedinIcon, href: "#", label: "LinkedIn" },
+                { Icon: FacebookIcon, href: "https://www.facebook.com/arafatalom.abir.1", label: "Facebook" },
+                { Icon: TwitterIcon, href: "https://x.com/arafat1abir", label: "Twitter" },
+                { Icon: InstagramIcon, href: "https://www.instagram.com/abir_._who/", label: "Instagram" },
+                { Icon: LinkedinIcon, href: "https://www.linkedin.com/in/md-arafat-alam-abir/", label: "LinkedIn" },
               ].map((social, index) => (
                 <motion.a
                   key={index}
@@ -122,7 +122,6 @@ export default function Footer() {
                 { name: "Featured Houses", href: "/featured" },
                 { name: "How It Works", href: "/how-it-works" },
                 { name: "Pricing Plans", href: "/pricing" },
-                { name: "List Your Property", href: "/list-property" },
               ].map((link, idx) => (
                 <li key={idx}>
                   <Link
@@ -137,20 +136,20 @@ export default function Footer() {
             </ul>
           </motion.div>
 
-          {/* Categories */}
+{/* Support & Resources (Replaced Categories) */}
           <motion.div variants={itemVariants} className="space-y-4">
-            <h3 className="text-sm font-semibold text-white tracking-wider uppercase">Categories</h3>
+            <h3 className="text-sm font-semibold text-white tracking-wider uppercase">Support</h3>
             <ul className="space-y-2.5 text-sm">
               {[
-                "Apartments",
-                "Luxury Villas",
-                "Studio Flats",
-                "Office Spaces",
-                "Single Family Homes",
-              ].map((cat, idx) => (
+                { name: "Help Center", href: "/help-center" },
+                { name: "Safety Guide", href: "/safety" },
+                { name: "Tenant Resources", href: "/resources/tenant" },
+                { name: "Landlord Guide", href: "/resources/landlord" },
+              ].map((link, idx) => (
                 <li key={idx}>
-                  <Link href={`/category/${cat.toLowerCase().replace(/\s+/g, '-')}`} className="hover:text-emerald-400 transition-colors duration-200">
-                    {cat}
+                  <Link href={link.href} className="hover:text-emerald-400 transition-colors duration-200 inline-flex items-center gap-1 group">
+                    <span>{link.name}</span>
+                    <ArrowUpRight className="w-3 h-3 opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                   </Link>
                 </li>
               ))}
@@ -167,11 +166,11 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>+880 1700-000000</span>
+                <span>+880 1306-979918</span>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-emerald-500 shrink-0" />
-                <span>support@rentnest.com</span>
+                <span>arafatabir5282@gmail.com</span>
               </li>
             </ul>
           </motion.div>

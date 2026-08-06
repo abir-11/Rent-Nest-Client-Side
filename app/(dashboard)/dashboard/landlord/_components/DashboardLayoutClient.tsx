@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Building, BellRing, Menu, X ,User,PlusSquare,Tags,House,ClipboardList} from "lucide-react";
+import { LayoutDashboard, Building, BellRing, Menu, X ,User,PlusSquare,Tags,House,ClipboardList, Home} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -39,6 +39,9 @@ export default function DashboardLayoutClient({ children }: { children: React.Re
       >
         <div className="flex items-center justify-between mb-8 px-2">
           <Link href={"/"} className="text-2xl font-bold text-white tracking-wider">
+                        <div className="p-2 bg-emerald-600 rounded-lg text-white group-hover:bg-emerald-500 transition-colors">
+                          <Home className="w-6 h-6" />
+                        </div>
             Rent<span className="text-emerald-500">Nest</span>
           </Link>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-gray-400 hover:text-white">
