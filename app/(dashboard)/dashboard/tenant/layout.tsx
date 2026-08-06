@@ -10,7 +10,8 @@ import {
   FileText, 
   Menu, 
   X, 
-  CheckCircle2 
+  CheckCircle2, 
+  AlertCircle
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,6 +24,7 @@ export default function TenantDashboardLayout({ children }: { children: React.Re
     { id: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard/tenant" },
     { id: "payments", label: "Payment History", icon: CreditCard, href: "/dashboard/tenant/payment/history" },
     { id: "requests", label: "My Rental Requests", icon: FileText, href: "/dashboard/tenant/my-rentals" },
+    { id: "complaints", label: "My Complaints", icon: AlertCircle, href: "/dashboard/tenant/complaints" },
     { id: "profile", label: "My Profile", icon: User, href: "/dashboard/tenant/profile" },
   ];
 

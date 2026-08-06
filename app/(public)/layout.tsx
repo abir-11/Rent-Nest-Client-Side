@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";  
 import Footer from '@/components/shared/footer/page';
 import { Navbar } from '@/components/shared/navbar/page';
 import { getMe } from '@/service/getMe'

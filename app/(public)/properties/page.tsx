@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import {
   Search, MapPin, BedDouble, Wifi, Car, ShieldCheck,
@@ -23,7 +24,7 @@ type Property = {
   title: string;
   description: string;
   price: number;
-  discountPercentage?: number; // 👈 Discount Field Added
+  discountPercentage?: number; 
   location: string;
   amenities: string[];
   images: string[];
@@ -47,62 +48,134 @@ const cardVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100 } }
 };
 
-export default function PropertiesPage() {
+// Main Component wrapped in Suspense (Best practice for Next.js useSearchParams)
+export default function PropertiesPageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-900 text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8 flex justify-center items-center">
+        Loading...
+      </div>
+    }>
+      <PropertiesPage />
+    </Suspense>
+  );
+}
+
+function PropertiesPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Filters & Pagination State
-  const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("createdAt");
-  const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ page: 1, limit: 10, totalProterties: 0, totalPage: 1 });
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [advancedFilters, setAdvancedFilters] = useState<FilterState | null>(null);
+  
+  // Local state for snappy typing, synced with URL params later
+  const [localSearchTerm, setLocalSearchTerm] = useState(searchParams.get("search") || "");
+  const [isInitialRender, setIsInitialRender] = useState(true);
 
-  // Fetch Data Form Server Action
-  const fetchProperties = async () => {
-    setLoading(true);
-    try {
-      const response = await getAllProperties({
-        page,
-        limit: 9,
-        searchTerm: searchTerm || undefined,
-        sortBy: sortBy.includes("price") ? "price" : "createdAt",
-        sortOrder: sortBy === "price_asc" ? "asc" : "desc",
-        location: advancedFilters?.location || undefined,
-        minPrice: advancedFilters?.minPrice || undefined,
-        maxPrice: advancedFilters?.maxPrice || undefined,
-        category: advancedFilters?.category !== "All" ? advancedFilters?.category : undefined,
-        amenities: advancedFilters?.amenities.length ? advancedFilters.amenities.join(",") : undefined,
-      });
+  // Derive Current Values from URL Search Params
+  const currentSearchTerm = searchParams.get("search") || "";
+  const currentSortBy = searchParams.get("sortBy") || "createdAt";
+  const currentPage = Number(searchParams.get("page")) || 1;
+  const currentLocation = searchParams.get("location") || "";
+  const currentMinPrice = searchParams.get("minPrice") || "";
+  const currentMaxPrice = searchParams.get("maxPrice") || "";
+  const currentCategory = searchParams.get("category") || "All";
+  const currentAmenities = searchParams.get("amenities") || "";
 
-      if (response?.success) {
-        setProperties(response.data);
-        if (response.meta) {
-          setMeta(response.meta);
-        }
+  // Update URL helper
+  const updateUrlParams = useCallback((updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    Object.keys(updates).forEach((key) => {
+      if (updates[key] === null || updates[key] === "") {
+        params.delete(key);
+      } else {
+        params.set(key, updates[key] as string);
       }
-    } catch (error) {
-      console.error("Failed to load properties");
-    } finally {
-      setLoading(false);
-    }
-  };
+    });
 
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  // Handle Search Input Change with Debounce
   useEffect(() => {
+    if (isInitialRender) {
+      setIsInitialRender(false);
+      return;
+    }
+
     const delayDebounceFn = setTimeout(() => {
-      fetchProperties();
+      updateUrlParams({
+        search: localSearchTerm || null,
+        page: "1" // Reset to page 1 on new search
+      });
     }, 500);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, sortBy, page, advancedFilters]);
+  }, [localSearchTerm]); // Trigger ONLY when typing changes
 
-  // Handle Search Input Change (Reset to page 1)
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-    setPage(1);
+  // Fetch Data when URL Params change
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setLoading(true);
+      try {
+        const response = await getAllProperties({
+          page: currentPage,
+          limit: 9,
+          searchTerm: currentSearchTerm || undefined,
+          sortBy: currentSortBy.includes("price") ? "price" : "createdAt",
+          sortOrder: currentSortBy === "price_asc" ? "asc" : "desc",
+          location: currentLocation || undefined,
+          minPrice: currentMinPrice || undefined,
+          maxPrice: currentMaxPrice || undefined,
+          category: currentCategory !== "All" ? currentCategory : undefined,
+          amenities: currentAmenities || undefined,
+        });
+
+        if (response?.success) {
+          setProperties(response.data);
+          if (response.meta) {
+            setMeta(response.meta);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load properties");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProperties();
+  }, [
+    currentPage, currentSearchTerm, currentSortBy, currentLocation, 
+    currentMinPrice, currentMaxPrice, currentCategory, currentAmenities
+  ]); // Trigger fetch whenever URL params change
+
+  // Sync local search term if user navigates via browser back/forward buttons
+  useEffect(() => {
+    setLocalSearchTerm(currentSearchTerm);
+  }, [currentSearchTerm]);
+
+  // Handle Advanced Filters Submit
+  const handleApplyFilters = (filters: FilterState) => {
+    updateUrlParams({
+      page: "1", // reset page
+      location: filters.location || null,
+      minPrice: filters.minPrice ? filters.minPrice.toString() : null,
+      maxPrice: filters.maxPrice ? filters.maxPrice.toString() : null,
+      category: filters.category && filters.category !== "All" ? filters.category : null,
+      amenities: filters.amenities.length > 0 ? filters.amenities.join(",") : null,
+    });
   };
+
+  // Determine if any advanced filters are active (for the indicator dot)
+  const hasActiveAdvancedFilters = Boolean(
+    currentLocation || currentMinPrice || currentMaxPrice || (currentCategory !== "All") || currentAmenities
+  );
 
   return (
     <div className="min-h-screen bg-gray-900 text-white pt-24 pb-12 px-4 sm:px-6 lg:px-8">
@@ -110,10 +183,7 @@ export default function PropertiesPage() {
       <AdvancedFilterSidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)} 
-        onApplyFilters={(filters) => {
-          setAdvancedFilters(filters);
-          setPage(1); 
-        }}
+        onApplyFilters={handleApplyFilters}
       />
 
       <div className="max-w-7xl mx-auto space-y-8">
@@ -126,8 +196,8 @@ export default function PropertiesPage() {
             <Input
               type="text"
               placeholder="Search by title or location..."
-              value={searchTerm}
-              onChange={handleSearchChange}
+              value={localSearchTerm}
+              onChange={(e) => setLocalSearchTerm(e.target.value)}
               className="w-full pl-10 bg-gray-900/50 border-white/10 focus-visible:ring-emerald-500 text-white placeholder-gray-400 rounded-xl h-12"
             />
           </div>
@@ -136,11 +206,8 @@ export default function PropertiesPage() {
             <div className="relative flex-1 md:w-48">
               <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <select
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  setPage(1); 
-                }}
+                value={currentSortBy}
+                onChange={(e) => updateUrlParams({ sortBy: e.target.value, page: "1" })}
                 className="w-full pl-9 pr-4 h-12 bg-gray-900 border border-white/10 rounded-xl text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 appearance-none cursor-pointer"
               >
                 <option value="createdAt">Newest First</option>
@@ -159,7 +226,7 @@ export default function PropertiesPage() {
               <span className="hidden md:inline">Filters</span>
               
               {/* Active Filter Indicator Dot */}
-              {advancedFilters && (advancedFilters.location || advancedFilters.amenities.length > 0 || advancedFilters.minPrice) && (
+              {hasActiveAdvancedFilters && (
                 <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-gray-900"></span>
               )}
             </Button>
@@ -194,7 +261,6 @@ export default function PropertiesPage() {
           >
             <AnimatePresence>
               {properties.map((property) => {
-                // Calculate discounted price if applicable
                 const hasDiscount = Boolean(property.discountPercentage && property.discountPercentage > 0);
                 const discountedPrice = hasDiscount
                   ? property.price - (property.price * (property.discountPercentage || 0)) / 100
@@ -323,14 +389,14 @@ export default function PropertiesPage() {
         {!loading && properties.length > 0 && meta.totalPage > 1 && (
           <div className="flex items-center justify-between border-t border-white/10 pt-8 mt-8">
             <p className="text-sm text-gray-400">
-              Showing <span className="font-semibold text-white">{(page - 1) * meta.limit + 1}</span> to <span className="font-semibold text-white">{Math.min(page * meta.limit, meta.totalProterties)}</span> of <span className="font-semibold text-white">{meta.totalProterties}</span> results
+              Showing <span className="font-semibold text-white">{(currentPage - 1) * meta.limit + 1}</span> to <span className="font-semibold text-white">{Math.min(currentPage * meta.limit, meta.totalProterties)}</span> of <span className="font-semibold text-white">{meta.totalProterties}</span> results
             </p>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
-                disabled={page === 1}
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                onClick={() => updateUrlParams({ page: Math.max(1, currentPage - 1).toString() })}
                 className="border-white/10 bg-white/5 text-white hover:bg-emerald-900/40 hover:text-emerald-400 disabled:opacity-50"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -340,9 +406,9 @@ export default function PropertiesPage() {
                 {Array.from({ length: meta.totalPage }, (_, i) => i + 1).map((pageNum) => (
                   <Button
                     key={pageNum}
-                    variant={page === pageNum ? "default" : "outline"}
-                    onClick={() => setPage(pageNum)}
-                    className={`w-10 h-10 ${page === pageNum
+                    variant={currentPage === pageNum ? "default" : "outline"}
+                    onClick={() => updateUrlParams({ page: pageNum.toString() })}
+                    className={`w-10 h-10 ${currentPage === pageNum
                       ? "bg-emerald-600 text-white hover:bg-emerald-500 border-transparent"
                       : "border-white/10 bg-white/5 text-gray-300 hover:bg-emerald-900/40 hover:text-emerald-400"
                       }`}
@@ -355,8 +421,8 @@ export default function PropertiesPage() {
               <Button
                 variant="outline"
                 size="icon"
-                disabled={page === meta.totalPage}
-                onClick={() => setPage(p => p + 1)}
+                disabled={currentPage === meta.totalPage}
+                onClick={() => updateUrlParams({ page: (currentPage + 1).toString() })}
                 className="border-white/10 bg-white/5 text-white hover:bg-emerald-900/40 hover:text-emerald-400 disabled:opacity-50"
               >
                 <ChevronRight className="h-4 w-4" />

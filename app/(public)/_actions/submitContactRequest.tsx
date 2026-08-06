@@ -22,7 +22,7 @@ export interface IComplaintPayload {
   message: string;
 }
 
-// ১. Landlord Request পাঠানোর জন্য Action
+// ১. Landlord Request  Action
 export async function submitLandlordRequest(payload: ILandlordRequestPayload) {
   try {
     const cookieStore = await cookies();
@@ -48,7 +48,7 @@ export async function submitLandlordRequest(payload: ILandlordRequestPayload) {
   }
 }
 
-// ২. Complaint পাঠানোর জন্য Action
+// ২. Complaint Action
 export async function submitComplaint(payload: IComplaintPayload) {
   try {
     const cookieStore = await cookies();

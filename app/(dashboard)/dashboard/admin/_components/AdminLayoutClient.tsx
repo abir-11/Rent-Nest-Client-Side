@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Building2, FileText, Menu, X, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, Building2, FileText, Menu, X, ShieldCheck,UserCheck ,AlertCircle} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,13 +10,15 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  const navItems = [
-    { id: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard/admin" },
-    { id: "users", label: "Manage Users", icon: Users, href: "/dashboard/admin/users" },
-    { id: "properties", label: "All Properties", icon: Building2, href: "/dashboard/admin/properties" },
-    { id: "rentals", label: "Rental Requests", icon: FileText, href: "/dashboard/admin/rentals" },
-    { id: "profile", label: "Admin Profile", icon: FileText, href: "/dashboard/admin/profile" },
-  ];
+const navItems = [
+  { id: "overview", label: "Overview", icon: LayoutDashboard, href: "/dashboard/admin" },
+  { id: "users", label: "Manage Users", icon: Users, href: "/dashboard/admin/users" },
+  { id: "properties", label: "All Properties", icon: Building2, href: "/dashboard/admin/properties" },
+  { id: "rentals", label: "Rental Requests", icon: FileText, href: "/dashboard/admin/rentals" },
+  { id: "landlord-requests", label: "Landlord Requests", icon: UserCheck, href: "/dashboard/admin/landlord-requests" },
+  { id: "complaints", label: "Complaints", icon: AlertCircle, href: "/dashboard/admin/complaints" },
+  { id: "profile", label: "Admin Profile", icon: FileText, href: "/dashboard/admin/profile" },
+];
 
   return (
     <div className="flex h-screen bg-gray-900 overflow-hidden font-sans">

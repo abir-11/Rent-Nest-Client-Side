@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://localhost:3000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "https://rent-nest-mu.vercel.app/";
 
 // Get All Users
 export async function getAdminUsers() {
@@ -108,5 +108,100 @@ export async function updateUserRole(userId: string, role: string) {
   } catch (error) {
     console.error(error);
     return { success: false, message: "Failed to update role" };
+  }
+}
+
+
+
+
+
+
+const BASE_ROUTE = `${API_BASE_URL}/api/landlord-requests`; 
+
+export async function getAdminLandlordRequests() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+    const res = await fetch(`${BASE_ROUTE}/admin`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    if (!res.ok) throw new Error("Failed to fetch landlord requests");
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+    return { data: [] };
+  }
+}
+
+export async function replyLandlordRequestAction(id: string, payload: { adminReply: string; status?: string }) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+    const res = await fetch(`${BASE_ROUTE}/${id}/reply`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    revalidatePath("/dashboard/admin/landlord-requests"); 
+    return await res.json();
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: "Failed to submit reply" };
+  }
+}
+
+const BASE_ROUTER = `${API_BASE_URL}/api/complaints`;
+
+export async function getAdminComplaints() {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+    
+    const res = await fetch(`${BASE_ROUTER}/admin/all`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+ 
+    if (!res.ok) throw new Error("Failed to fetch complaints");
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching complaints:", error);
+    return { data: [] };
+  }
+}
+
+// Reply to a Complaint
+export async function replyComplaintAction(id: string, payload: { adminReply: string; complaintStatus?: string }) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("accessToken")?.value;
+    
+    const res = await fetch(`${BASE_ROUTER}/admin/reply/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify(payload),
+    });
+  
+    revalidatePath("/dashboard/admin/complaints");
+    return await res.json();
+  } catch (error) {
+    console.error("Error replying to complaint:", error);
+    return { success: false, message: "Failed to submit reply" };
   }
 }
